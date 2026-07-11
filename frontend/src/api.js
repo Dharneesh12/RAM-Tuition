@@ -1,8 +1,21 @@
 // Central API base URL.
 //   - Local dev:      leave VITE_API_BASE unset -> '' -> requests hit the Vite proxy (/api -> localhost:5001)
-//   - Vercel / prod:  set VITE_API_BASE to the backend's public URL (e.g. your ngrok https URL)
+//   - Vercel / prod:  set VITE_API_BASE to the backend's public URL (e.g. your ngrok host)
 //                     so the hosted frontend calls the tunneled backend directly.
-export const API_BASE = (import.meta.env.VITE_API_BASE || '').replace(/\/$/, '');
+//
+// Normalization keeps it working no matter how the env var was entered:
+//   "host.ngrok-free.dev"     -> "https://host.ngrok-free.dev"   (adds missing scheme)
+//   "https://host/"           -> "https://host"                  (strips trailing slash)
+//   ""/undefined              -> ""                              (same-origin / Vite proxy)
+const normalizeBase = (raw) => {
+  let base = (raw || '').trim().replace(/\/+$/, '');
+  if (!base) return '';
+  // If the user pasted a bare host (no scheme), assume https.
+  if (!/^https?:\/\//i.test(base)) base = `https://${base}`;
+  return base;
+};
+
+export const API_BASE = normalizeBase(import.meta.env.VITE_API_BASE);
 
 // Drop-in replacement for fetch() that prefixes API paths with API_BASE.
 // Also sends `ngrok-skip-browser-warning` so ngrok's free-tier interstitial
