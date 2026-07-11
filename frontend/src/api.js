@@ -5,4 +5,13 @@
 export const API_BASE = (import.meta.env.VITE_API_BASE || '').replace(/\/$/, '');
 
 // Drop-in replacement for fetch() that prefixes API paths with API_BASE.
-export const apiFetch = (path, options) => fetch(`${API_BASE}${path}`, options);
+// Also sends `ngrok-skip-browser-warning` so ngrok's free-tier interstitial
+// page never replaces the JSON response (harmless when not using ngrok).
+export const apiFetch = (path, options = {}) =>
+  fetch(`${API_BASE}${path}`, {
+    ...options,
+    headers: {
+      'ngrok-skip-browser-warning': 'true',
+      ...(options.headers || {}),
+    },
+  });
