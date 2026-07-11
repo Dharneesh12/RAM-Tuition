@@ -22,23 +22,119 @@ app.post('/api/auth/login', async (req, res) => {
   const { username, password, role } = req.body;
   try {
     const user = await services.getUserByUsername(username);
-    if (!user) {
-      return res.status(401).json({ error: 'Invalid username or password' });
-    }
-    // Simple password verification
-    if (user.password !== password) {
-      return res.status(401).json({ error: 'Invalid username or password' });
-    }
-    // Verify role
-    if (user.role !== role) {
-      return res.status(401).json({ error: 'Role mismatch' });
-    }
-    res.json({
-      id: user.id,
-      username: user.username,
-      role: user.role,
-      name: user.name
+    if (!user) return res.status(401).json({ error: 'Invalid username or password' });
+    if (user.password !== password) return res.status(401).json({ error: 'Invalid username or password' });
+    if (user.role !== role) return res.status(401).json({ error: 'Role mismatch' });
+    res.json({ id: user.id, username: user.username, role: user.role, name: user.name });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// -------------------------------------------------------------
+// USER MANAGEMENT ROUTES (Admin only — enforced on frontend)
+// -------------------------------------------------------------
+app.get('/api/users', async (req, res) => {
+  try {
+    const users = await services.getUsers();
+    res.json(users);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/users', async (req, res) => {
+  const { username, password, role, name } = req.body;
+  if (!username || !password || !role || !name) {
+    return res.status(400).json({ error: 'Missing required fields: username, password, role, name' });
+  }
+  if (!['director', 'staff', 'student'].includes(role)) {
+    return res.status(400).json({ error: 'Role must be director, staff, or student' });
+  }
+  try {
+    const newUser = await services.createUser({ username, password, role, name });
+    res.status(201).json(newUser);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.put('/api/users/:id', async (req, res) => {
+  const { id } = req.params;
+  const { username, password, role, name } = req.body;
+  const updates = {};
+  if (username) updates.username = username;
+  if (password) updates.password = password;
+  if (role) updates.role = role;
+  if (name) updates.name = name;
+  try {
+    const updated = await services.updateUser(parseInt(id), updates);
+    if (!updated) return res.status(404).json({ error: 'User not found' });
+    res.json(updated);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.delete('/api/users/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const deleted = await services.deleteUser(parseInt(id));
+    if (!deleted) return res.status(404).json({ error: 'User not found' });
+    res.json({ message: 'User deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// -------------------------------------------------------------
+// STAFF ROUTES
+// -------------------------------------------------------------
+app.get('/api/staff', async (req, res) => {
+  try {
+    const staff = await services.getStaff();
+    res.json(staff);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/staff', async (req, res) => {
+  const { name, email, phone, role, classes, subjects, joined, status } = req.body;
+  if (!name || !email || !role) {
+    return res.status(400).json({ error: 'Missing required fields: name, email, role' });
+  }
+  try {
+    const newStaff = await services.createStaff({
+      name, email, phone: phone || '', role,
+      classes: classes || [], subjects: subjects || [],
+      joined: joined || new Date().toISOString().split('T')[0],
+      status: status || 'active'
     });
+    res.status(201).json(newStaff);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.put('/api/staff/:id', async (req, res) => {
+  const { id } = req.params;
+  const updates = req.body;
+  try {
+    const updated = await services.updateStaff(parseInt(id), updates);
+    if (!updated) return res.status(404).json({ error: 'Staff not found' });
+    res.json(updated);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.delete('/api/staff/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const deleted = await services.deleteStaff(parseInt(id));
+    if (!deleted) return res.status(404).json({ error: 'Staff not found' });
+    res.json({ message: 'Staff member deleted successfully' });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -58,11 +154,9 @@ app.get('/api/students', async (req, res) => {
 
 app.post('/api/students', async (req, res) => {
   const { name, grade, school, email, fatherName, fatherWhatsapp, motherName, motherWhatsapp, subjects, photoUrl, status } = req.body;
-  
   if (!name || !grade || !school || !email || !fatherName || !fatherWhatsapp || !motherName || !motherWhatsapp || !subjects) {
     return res.status(400).json({ error: 'Missing required admission fields' });
   }
-
   try {
     const student = await services.createStudent({
       name, grade, school, email, fatherName, fatherWhatsapp, motherName, motherWhatsapp, subjects, photoUrl, status: status || 'active'
@@ -73,14 +167,35 @@ app.post('/api/students', async (req, res) => {
   }
 });
 
+app.put('/api/students/:id', async (req, res) => {
+  const { id } = req.params;
+  const updates = req.body;
+  try {
+    const updated = await services.updateStudent(parseInt(id), updates);
+    if (!updated) return res.status(404).json({ error: 'Student not found' });
+    res.json(updated);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.delete('/api/students/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const deleted = await services.deleteStudent(parseInt(id));
+    if (!deleted) return res.status(404).json({ error: 'Student not found' });
+    res.json({ message: 'Student deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // -------------------------------------------------------------
 // ATTENDANCE ROUTES
 // -------------------------------------------------------------
 app.get('/api/attendance', async (req, res) => {
   const { date } = req.query;
-  if (!date) {
-    return res.status(400).json({ error: 'Date query param required (YYYY-MM-DD)' });
-  }
+  if (!date) return res.status(400).json({ error: 'Date query param required (YYYY-MM-DD)' });
   try {
     const attendance = await services.getAttendanceByDate(date);
     res.json(attendance);
@@ -107,12 +222,19 @@ app.post('/api/attendance', async (req, res) => {
 // -------------------------------------------------------------
 app.get('/api/marks', async (req, res) => {
   const { testName } = req.query;
-  if (!testName) {
-    return res.status(400).json({ error: 'testName query param required' });
-  }
+  if (!testName) return res.status(400).json({ error: 'testName query param required' });
   try {
     const marks = await services.getMarksByTest(testName);
     res.json(marks);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/api/marks/tests', async (req, res) => {
+  try {
+    const tests = await services.getAllTestNames();
+    res.json(tests);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -136,9 +258,7 @@ app.post('/api/marks', async (req, res) => {
 // -------------------------------------------------------------
 app.get('/api/fees', async (req, res) => {
   const { month } = req.query;
-  if (!month) {
-    return res.status(400).json({ error: 'Month query param required' });
-  }
+  if (!month) return res.status(400).json({ error: 'Month query param required' });
   try {
     const fees = await services.getFeesByMonth(month);
     res.json(fees);
@@ -150,14 +270,10 @@ app.get('/api/fees', async (req, res) => {
 app.put('/api/fees/:id', async (req, res) => {
   const { id } = req.params;
   const { status } = req.body;
-  if (!status) {
-    return res.status(400).json({ error: 'Status is required' });
-  }
+  if (!status) return res.status(400).json({ error: 'Status is required' });
   try {
     const updated = await services.updateFeeStatus(parseInt(id), status);
-    if (!updated) {
-      return res.status(404).json({ error: 'Fee record not found' });
-    }
+    if (!updated) return res.status(404).json({ error: 'Fee record not found' });
     res.json(updated);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -189,6 +305,29 @@ app.post('/api/notices', async (req, res) => {
   }
 });
 
+app.put('/api/notices/:id', async (req, res) => {
+  const { id } = req.params;
+  const updates = req.body;
+  try {
+    const updated = await services.updateNotice(parseInt(id), updates);
+    if (!updated) return res.status(404).json({ error: 'Notice not found' });
+    res.json(updated);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.delete('/api/notices/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const deleted = await services.deleteNotice(parseInt(id));
+    if (!deleted) return res.status(404).json({ error: 'Notice not found' });
+    res.json({ message: 'Notice deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // -------------------------------------------------------------
 // WORK DONE LOG ROUTES
 // -------------------------------------------------------------
@@ -214,6 +353,29 @@ app.post('/api/workdone', async (req, res) => {
   }
 });
 
+app.put('/api/workdone/:id', async (req, res) => {
+  const { id } = req.params;
+  const updates = req.body;
+  try {
+    const updated = await services.updateWorkDone(parseInt(id), updates);
+    if (!updated) return res.status(404).json({ error: 'Work done entry not found' });
+    res.json(updated);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.delete('/api/workdone/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const deleted = await services.deleteWorkDone(parseInt(id));
+    if (!deleted) return res.status(404).json({ error: 'Work done entry not found' });
+    res.json({ message: 'Entry deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // -------------------------------------------------------------
 // DASHBOARD METRICS ROUTE
 // -------------------------------------------------------------
@@ -221,36 +383,21 @@ app.get('/api/dashboard', async (req, res) => {
   try {
     const students = await services.getStudents();
     const notices = await services.getNotices();
-    
-    // Active fees
+    const staff = await services.getStaff();
     const fees = await services.getFeesByMonth('July');
     const totalStudents = students.length;
-    const totalStaff = 18; // Default static configuration
+    const totalStaff = staff.length;
 
-    // Calculate Fees Pending
-    let pendingAmount = 0;
-    let collectedAmount = 0;
-    let paidCount = 0;
-    let pendingCount = 0;
-    
+    let pendingAmount = 0, collectedAmount = 0, paidCount = 0, pendingCount = 0;
     fees.forEach(f => {
-      if (f.status === 'pending') {
-        pendingAmount += f.amount;
-        pendingCount++;
-      } else {
-        collectedAmount += f.amount;
-        paidCount++;
-      }
+      if (f.status === 'pending') { pendingAmount += f.amount; pendingCount++; }
+      else { collectedAmount += f.amount; paidCount++; }
     });
 
-    // Score metrics (Marks below 50%)
     const allMarks = await services.getMarksByTest('Unit Test 2 — Trigonometry');
     let lowScoresCount = 0;
     allMarks.forEach(m => {
-      const percentage = (m.marksObtained / m.maxMarks) * 100;
-      if (percentage < 50) {
-        lowScoresCount++;
-      }
+      if ((m.marksObtained / m.maxMarks) * 100 < 50) lowScoresCount++;
     });
 
     res.json({
@@ -258,7 +405,7 @@ app.get('/api/dashboard', async (req, res) => {
         totalStudents,
         totalStaff,
         feesPendingAmount: pendingAmount,
-        collectedAmount: collectedAmount,
+        collectedAmount,
         lowScoresCount,
         collectionRate: fees.length > 0 ? Math.round((collectedAmount / (collectedAmount + pendingAmount)) * 100) : 0,
         paidCount,

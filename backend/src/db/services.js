@@ -9,6 +9,12 @@ const mockDb = {
     { id: 2, username: 'staff@ramtuitioncentre.com', password: 'password', role: 'staff', name: 'Suganya K' },
     { id: 3, username: 'student@ramtuitioncentre.com', password: 'password', role: 'student', name: 'Arun Kumar' }
   ],
+  staff: [
+    { id: 1, name: 'Suganya K', email: 'suganya@ramtuitioncentre.com', phone: '+91 98765 11111', role: 'Mathematics Teacher', classes: ['Class 10', 'Class 12'], subjects: ['Mathematics'], joined: '2021-06-01', status: 'active' },
+    { id: 2, name: 'Mohan R', email: 'mohan@ramtuitioncentre.com', phone: '+91 98765 22222', role: 'Science Teacher', classes: ['Class 9', 'Class 10'], subjects: ['Physics', 'Chemistry', 'Biology'], joined: '2022-05-15', status: 'active' },
+    { id: 3, name: 'Naveen Raj', email: 'naveen@ramtuitioncentre.com', phone: '+91 98765 33333', role: 'English Instructor', classes: ['Class 10', 'Class 11', 'Class 12'], subjects: ['English'], joined: '2023-01-10', status: 'active' },
+    { id: 4, name: 'Meera G', email: 'meera@ramtuitioncentre.com', phone: '+91 98765 44444', role: 'Social Science Educator', classes: ['Class 9', 'Class 10'], subjects: ['History', 'Civics', 'Geography'], joined: '2023-08-01', status: 'active' }
+  ],
   students: [
     { id: 1, rollNo: 'R-1042', name: 'Arun Kumar', grade: 'Class 12', school: 'Govt. Hr. Sec. School, Ganapathy', email: 'arun@gmail.com', fatherName: 'Kumar S', fatherWhatsapp: '+91 98765 43211', motherName: 'Anitha K', motherWhatsapp: '+91 98765 12341', subjects: ['Mathematics', 'Physics'], photoUrl: null, status: 'active' },
     { id: 2, rollNo: 'R-1043', name: 'Sneha Priya', grade: 'Class 10', school: 'Mani Hr. Sec. School, Coimbatore', email: 'sneha@gmail.com', fatherName: 'Priya Raj', fatherWhatsapp: '+91 98765 43212', motherName: 'Devi P', motherWhatsapp: '+91 98765 12342', subjects: ['Mathematics', 'Science'], photoUrl: null, status: 'active' },
@@ -54,11 +60,6 @@ const mockDb = {
   ]
 };
 
-// HELPER: Get in-memory mock student by roll
-const getMockStudentByRoll = (rollNo) => {
-  return mockDb.students.find(s => s.rollNo === rollNo);
-};
-
 // -------------------------------------------------------------
 // USER SERVICES
 // -------------------------------------------------------------
@@ -70,13 +71,99 @@ export const getUserByUsername = async (username) => {
   return result[0] || null;
 };
 
+export const getUsers = async () => {
+  if (isMock) return mockDb.users.map(({ password, ...u }) => u);
+  const result = await db.select({
+    id: schema.users.id,
+    username: schema.users.username,
+    role: schema.users.role,
+    name: schema.users.name
+  }).from(schema.users);
+  return result;
+};
+
+export const createUser = async (userData) => {
+  if (isMock) {
+    const nextId = mockDb.users.length > 0 ? Math.max(...mockDb.users.map(u => u.id)) + 1 : 1;
+    const newUser = { id: nextId, ...userData };
+    mockDb.users.push(newUser);
+    const { password, ...safe } = newUser;
+    return safe;
+  }
+  const [newUser] = await db.insert(schema.users).values(userData).returning({
+    id: schema.users.id,
+    username: schema.users.username,
+    role: schema.users.role,
+    name: schema.users.name
+  });
+  return newUser;
+};
+
+export const updateUser = async (userId, updates) => {
+  if (isMock) {
+    const idx = mockDb.users.findIndex(u => u.id === userId);
+    if (idx === -1) return null;
+    mockDb.users[idx] = { ...mockDb.users[idx], ...updates };
+    const { password, ...safe } = mockDb.users[idx];
+    return safe;
+  }
+  const [updated] = await db.update(schema.users)
+    .set(updates)
+    .where(eq(schema.users.id, userId))
+    .returning({
+      id: schema.users.id,
+      username: schema.users.username,
+      role: schema.users.role,
+      name: schema.users.name
+    });
+  return updated || null;
+};
+
+export const deleteUser = async (userId) => {
+  if (isMock) {
+    const idx = mockDb.users.findIndex(u => u.id === userId);
+    if (idx === -1) return false;
+    mockDb.users.splice(idx, 1);
+    return true;
+  }
+  await db.delete(schema.users).where(eq(schema.users.id, userId));
+  return true;
+};
+
+// -------------------------------------------------------------
+// STAFF SERVICES (in-memory only for now — extend schema for PG)
+// -------------------------------------------------------------
+export const getStaff = async () => {
+  // Staff is in-memory even in PG mode for now
+  return mockDb.staff;
+};
+
+export const createStaff = async (staffData) => {
+  const nextId = mockDb.staff.length > 0 ? Math.max(...mockDb.staff.map(s => s.id)) + 1 : 1;
+  const newStaff = { id: nextId, ...staffData, status: staffData.status || 'active' };
+  mockDb.staff.push(newStaff);
+  return newStaff;
+};
+
+export const updateStaff = async (staffId, updates) => {
+  const idx = mockDb.staff.findIndex(s => s.id === staffId);
+  if (idx === -1) return null;
+  mockDb.staff[idx] = { ...mockDb.staff[idx], ...updates };
+  return mockDb.staff[idx];
+};
+
+export const deleteStaff = async (staffId) => {
+  const idx = mockDb.staff.findIndex(s => s.id === staffId);
+  if (idx === -1) return false;
+  mockDb.staff.splice(idx, 1);
+  return true;
+};
+
 // -------------------------------------------------------------
 // STUDENT SERVICES
 // -------------------------------------------------------------
 export const getStudents = async () => {
-  if (isMock) {
-    return mockDb.students;
-  }
+  if (isMock) return mockDb.students;
   return await db.select().from(schema.students);
 };
 
@@ -86,7 +173,6 @@ export const createStudent = async (studentData) => {
     const rollNo = `R-${1042 + mockDb.students.length}`;
     const newStudent = { id: nextId, rollNo, ...studentData, status: studentData.status || 'active' };
     mockDb.students.push(newStudent);
-    // Auto-create a pending fee record for this student
     const classFees = { 'Class 9': 1800, 'Class 10': 2000, 'Class 11': 2200, 'Class 12': 2500 };
     const amount = classFees[studentData.grade] || 2000;
     mockDb.fees.push({
@@ -100,32 +186,49 @@ export const createStudent = async (studentData) => {
   }
   const rollNo = `R-${1042 + (await db.select().from(schema.students)).length}`;
   const [newStudent] = await db.insert(schema.students).values({ ...studentData, rollNo }).returning();
-  
-  // Create fee record
   const classFees = { 'Class 9': 1800, 'Class 10': 2000, 'Class 11': 2200, 'Class 12': 2500 };
   const amount = classFees[studentData.grade] || 2000;
-  await db.insert(schema.fees).values({
-    studentId: newStudent.id,
-    month: 'July',
-    amount,
-    status: 'pending'
-  });
-
+  await db.insert(schema.fees).values({ studentId: newStudent.id, month: 'July', amount, status: 'pending' });
   return newStudent;
+};
+
+export const updateStudent = async (studentId, updates) => {
+  if (isMock) {
+    const idx = mockDb.students.findIndex(s => s.id === studentId);
+    if (idx === -1) return null;
+    mockDb.students[idx] = { ...mockDb.students[idx], ...updates };
+    return mockDb.students[idx];
+  }
+  const [updated] = await db.update(schema.students)
+    .set(updates)
+    .where(eq(schema.students.id, studentId))
+    .returning();
+  return updated || null;
+};
+
+export const deleteStudent = async (studentId) => {
+  if (isMock) {
+    const idx = mockDb.students.findIndex(s => s.id === studentId);
+    if (idx === -1) return false;
+    mockDb.students.splice(idx, 1);
+    mockDb.fees = mockDb.fees.filter(f => f.studentId !== studentId);
+    mockDb.attendance = mockDb.attendance.filter(a => a.studentId !== studentId);
+    mockDb.marks = mockDb.marks.filter(m => m.studentId !== studentId);
+    return true;
+  }
+  await db.delete(schema.students).where(eq(schema.students.id, studentId));
+  return true;
 };
 
 // -------------------------------------------------------------
 // ATTENDANCE SERVICES
 // -------------------------------------------------------------
 export const getAttendanceByDate = async (date) => {
-  if (isMock) {
-    return mockDb.attendance.filter(a => a.date === date);
-  }
+  if (isMock) return mockDb.attendance.filter(a => a.date === date);
   return await db.select().from(schema.attendance).where(eq(schema.attendance.date, date));
 };
 
 export const saveAttendance = async (date, records) => {
-  // records is array of { studentId, status }
   if (isMock) {
     records.forEach(rec => {
       const idx = mockDb.attendance.findIndex(a => a.date === date && a.studentId === rec.studentId);
@@ -138,25 +241,14 @@ export const saveAttendance = async (date, records) => {
     });
     return { success: true };
   }
-
   for (const rec of records) {
     const existing = await db.select().from(schema.attendance).where(
-      and(
-        eq(schema.attendance.date, date),
-        eq(schema.attendance.studentId, rec.studentId)
-      )
+      and(eq(schema.attendance.date, date), eq(schema.attendance.studentId, rec.studentId))
     );
-
     if (existing.length > 0) {
-      await db.update(schema.attendance)
-        .set({ status: rec.status })
-        .where(eq(schema.attendance.id, existing[0].id));
+      await db.update(schema.attendance).set({ status: rec.status }).where(eq(schema.attendance.id, existing[0].id));
     } else {
-      await db.insert(schema.attendance).values({
-        studentId: rec.studentId,
-        date,
-        status: rec.status
-      });
+      await db.insert(schema.attendance).values({ studentId: rec.studentId, date, status: rec.status });
     }
   }
   return { success: true };
@@ -166,14 +258,20 @@ export const saveAttendance = async (date, records) => {
 // MARKS SERVICES
 // -------------------------------------------------------------
 export const getMarksByTest = async (testName) => {
-  if (isMock) {
-    return mockDb.marks.filter(m => m.testName === testName);
-  }
+  if (isMock) return mockDb.marks.filter(m => m.testName === testName);
   return await db.select().from(schema.marks).where(eq(schema.marks.testName, testName));
 };
 
+export const getAllTestNames = async () => {
+  if (isMock) {
+    const names = [...new Set(mockDb.marks.map(m => m.testName))];
+    return names;
+  }
+  const result = await db.selectDistinct({ testName: schema.marks.testName }).from(schema.marks);
+  return result.map(r => r.testName);
+};
+
 export const saveMarks = async (testName, subject, records) => {
-  // records is array of { studentId, marksObtained, maxMarks, remarks }
   if (isMock) {
     records.forEach(rec => {
       const idx = mockDb.marks.findIndex(m => m.testName === testName && m.studentId === rec.studentId);
@@ -196,31 +294,18 @@ export const saveMarks = async (testName, subject, records) => {
     });
     return { success: true };
   }
-
   for (const rec of records) {
     const existing = await db.select().from(schema.marks).where(
-      and(
-        eq(schema.marks.testName, testName),
-        eq(schema.marks.studentId, rec.studentId)
-      )
+      and(eq(schema.marks.testName, testName), eq(schema.marks.studentId, rec.studentId))
     );
-
     if (existing.length > 0) {
       await db.update(schema.marks)
-        .set({
-          marksObtained: parseInt(rec.marksObtained),
-          maxMarks: parseInt(rec.maxMarks),
-          remarks: rec.remarks
-        })
+        .set({ marksObtained: parseInt(rec.marksObtained), maxMarks: parseInt(rec.maxMarks), remarks: rec.remarks })
         .where(eq(schema.marks.id, existing[0].id));
     } else {
       await db.insert(schema.marks).values({
-        studentId: rec.studentId,
-        testName,
-        subject,
-        marksObtained: parseInt(rec.marksObtained),
-        maxMarks: parseInt(rec.maxMarks),
-        remarks: rec.remarks
+        studentId: rec.studentId, testName, subject,
+        marksObtained: parseInt(rec.marksObtained), maxMarks: parseInt(rec.maxMarks), remarks: rec.remarks
       });
     }
   }
@@ -231,25 +316,17 @@ export const saveMarks = async (testName, subject, records) => {
 // FEES SERVICES
 // -------------------------------------------------------------
 export const getFeesByMonth = async (month) => {
-  if (isMock) {
-    return mockDb.fees.filter(f => f.month === month);
-  }
+  if (isMock) return mockDb.fees.filter(f => f.month === month);
   return await db.select().from(schema.fees).where(eq(schema.fees.month, month));
 };
 
 export const updateFeeStatus = async (feeId, status) => {
   if (isMock) {
     const idx = mockDb.fees.findIndex(f => f.id === feeId);
-    if (idx !== -1) {
-      mockDb.fees[idx].status = status;
-      return mockDb.fees[idx];
-    }
+    if (idx !== -1) { mockDb.fees[idx].status = status; return mockDb.fees[idx]; }
     return null;
   }
-  const [updated] = await db.update(schema.fees)
-    .set({ status })
-    .where(eq(schema.fees.id, feeId))
-    .returning();
+  const [updated] = await db.update(schema.fees).set({ status }).where(eq(schema.fees.id, feeId)).returning();
   return updated || null;
 };
 
@@ -257,9 +334,7 @@ export const updateFeeStatus = async (feeId, status) => {
 // NOTICE SERVICES
 // -------------------------------------------------------------
 export const getNotices = async () => {
-  if (isMock) {
-    return mockDb.notices;
-  }
+  if (isMock) return mockDb.notices;
   return await db.select().from(schema.notices);
 };
 
@@ -274,13 +349,33 @@ export const createNotice = async (noticeData) => {
   return newNotice;
 };
 
+export const updateNotice = async (noticeId, updates) => {
+  if (isMock) {
+    const idx = mockDb.notices.findIndex(n => n.id === noticeId);
+    if (idx === -1) return null;
+    mockDb.notices[idx] = { ...mockDb.notices[idx], ...updates };
+    return mockDb.notices[idx];
+  }
+  const [updated] = await db.update(schema.notices).set(updates).where(eq(schema.notices.id, noticeId)).returning();
+  return updated || null;
+};
+
+export const deleteNotice = async (noticeId) => {
+  if (isMock) {
+    const idx = mockDb.notices.findIndex(n => n.id === noticeId);
+    if (idx === -1) return false;
+    mockDb.notices.splice(idx, 1);
+    return true;
+  }
+  await db.delete(schema.notices).where(eq(schema.notices.id, noticeId));
+  return true;
+};
+
 // -------------------------------------------------------------
 // WORK DONE SERVICES
 // -------------------------------------------------------------
 export const getWorkDone = async () => {
-  if (isMock) {
-    return mockDb.workDone;
-  }
+  if (isMock) return mockDb.workDone;
   return await db.select().from(schema.workDone);
 };
 
@@ -293,4 +388,26 @@ export const createWorkDone = async (entryData) => {
   }
   const [newEntry] = await db.insert(schema.workDone).values(entryData).returning();
   return newEntry;
+};
+
+export const updateWorkDone = async (entryId, updates) => {
+  if (isMock) {
+    const idx = mockDb.workDone.findIndex(w => w.id === entryId);
+    if (idx === -1) return null;
+    mockDb.workDone[idx] = { ...mockDb.workDone[idx], ...updates };
+    return mockDb.workDone[idx];
+  }
+  const [updated] = await db.update(schema.workDone).set(updates).where(eq(schema.workDone.id, entryId)).returning();
+  return updated || null;
+};
+
+export const deleteWorkDone = async (entryId) => {
+  if (isMock) {
+    const idx = mockDb.workDone.findIndex(w => w.id === entryId);
+    if (idx === -1) return false;
+    mockDb.workDone.splice(idx, 1);
+    return true;
+  }
+  await db.delete(schema.workDone).where(eq(schema.workDone.id, entryId));
+  return true;
 };

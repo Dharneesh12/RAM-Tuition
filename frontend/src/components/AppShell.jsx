@@ -29,7 +29,8 @@ export default function AppShell({ user, activeTab, setActiveTab, onLogout, chil
               items: [
                 { id: 'fees', label: 'Fees', icon: 'i-wallet' },
                 { id: 'notices', label: 'Notice Board', icon: 'i-mega' },
-                { id: 'reports', label: 'Reports', icon: 'i-chart' }
+                { id: 'reports', label: 'Reports', icon: 'i-chart' },
+                { id: 'users', label: 'User Management', icon: 'i-user' }
               ]
             }
           ]
