@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { apiFetch } from '../api.js';
 
 export default function MarksEntry() {
   const [selectedClass, setSelectedClass] = useState('Class 10');
@@ -16,13 +17,13 @@ export default function MarksEntry() {
     setMessage('');
     try {
       // 1. Fetch students
-      const studRes = await fetch('/api/students');
+      const studRes = await apiFetch('/api/students');
       const studData = await studRes.json();
       const filtered = studData.filter((s) => s.grade === selectedClass && s.status !== 'draft');
       setStudents(filtered);
 
       // 2. Fetch marks for this test
-      const marksRes = await fetch(`/api/marks?testName=${encodeURIComponent(testName)}`);
+      const marksRes = await apiFetch(`/api/marks?testName=${encodeURIComponent(testName)}`);
       const marksRecords = await marksRes.json();
 
       // Map existing records
@@ -80,7 +81,7 @@ export default function MarksEntry() {
       }));
 
     try {
-      const response = await fetch('/api/marks', {
+      const response = await apiFetch('/api/marks', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

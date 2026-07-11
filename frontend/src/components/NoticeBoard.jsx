@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { apiFetch } from '../api.js';
 
 export default function NoticeBoard() {
   const [notices, setNotices] = useState([]);
@@ -14,7 +15,7 @@ export default function NoticeBoard() {
   const fetchNotices = async () => {
     setLoading(true);
     try {
-      const response = await fetch('/api/notices');
+      const response = await apiFetch('/api/notices');
       const data = await response.json();
       // Sort notices so the latest is at the top
       setNotices(data.reverse());
@@ -40,7 +41,7 @@ export default function NoticeBoard() {
     setMessage('');
 
     try {
-      const response = await fetch('/api/notices', {
+      const response = await apiFetch('/api/notices', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

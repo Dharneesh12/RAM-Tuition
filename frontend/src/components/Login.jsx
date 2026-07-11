@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { apiFetch } from '../api.js';
 
 export default function Login({ onLoginSuccess }) {
   const [role, setRole] = useState('director'); // 'director', 'staff', 'student'
@@ -27,7 +28,7 @@ export default function Login({ onLoginSuccess }) {
     setLoading(true);
 
     try {
-      const response = await fetch('/api/auth/login', {
+      const response = await apiFetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password, role }),

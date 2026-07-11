@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { apiFetch } from '../api.js';
 
 export default function FeeManagement() {
   const [selectedMonth, setSelectedMonth] = useState('July');
@@ -13,12 +14,12 @@ export default function FeeManagement() {
     setLoading(true);
     try {
       // 1. Fetch students
-      const studRes = await fetch('/api/students');
+      const studRes = await apiFetch('/api/students');
       const studData = await studRes.json();
       setStudents(studData.filter(s => s.status !== 'draft'));
 
       // 2. Fetch fees for selected month
-      const feeRes = await fetch(`/api/fees?month=${selectedMonth}`);
+      const feeRes = await apiFetch(`/api/fees?month=${selectedMonth}`);
       const feeData = await feeRes.json();
       setFeeRecords(feeData);
     } catch (err) {
@@ -37,7 +38,7 @@ export default function FeeManagement() {
     const newStatus = currentStatus === 'paid' ? 'pending' : 'paid';
     
     try {
-      const response = await fetch(`/api/fees/${recordId}`, {
+      const response = await apiFetch(`/api/fees/${recordId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: newStatus })

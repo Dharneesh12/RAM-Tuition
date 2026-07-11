@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { apiFetch } from '../api.js';
 
 export default function DirectorDashboard({ setActiveTab }) {
   const [data, setData] = useState(null);
@@ -7,7 +8,7 @@ export default function DirectorDashboard({ setActiveTab }) {
 
   const fetchDashboardData = async () => {
     try {
-      const response = await fetch('/api/dashboard');
+      const response = await apiFetch('/api/dashboard');
       if (!response.ok) {
         throw new Error('Failed to load dashboard data');
       }

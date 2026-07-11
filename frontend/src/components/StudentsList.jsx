@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { apiFetch } from '../api.js';
 
 export default function StudentsList({ setActiveTab }) {
   const [students, setStudents] = useState([]);
@@ -9,7 +10,7 @@ export default function StudentsList({ setActiveTab }) {
   const fetchStudents = async () => {
     setLoading(true);
     try {
-      const response = await fetch('/api/students');
+      const response = await apiFetch('/api/students');
       if (!response.ok) {
         throw new Error('Failed to fetch student directory');
       }

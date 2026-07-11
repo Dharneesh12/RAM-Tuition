@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { apiFetch } from '../api.js';
 
 export default function WorkDoneLog({ user }) {
   const [entries, setEntries] = useState([]);
@@ -15,7 +16,7 @@ export default function WorkDoneLog({ user }) {
   const fetchEntries = async () => {
     setLoading(true);
     try {
-      const response = await fetch('/api/workdone');
+      const response = await apiFetch('/api/workdone');
       const data = await response.json();
       setEntries(data.reverse()); // latest first
     } catch (err) {
@@ -45,7 +46,7 @@ export default function WorkDoneLog({ user }) {
     const dateStr = `${now.getDate().toString().padStart(2, '0')} ${months[now.getMonth()]}`;
 
     try {
-      const response = await fetch('/api/workdone', {
+      const response = await apiFetch('/api/workdone', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

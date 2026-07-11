@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { apiFetch } from '../api.js';
 
 export default function AdmissionForm({ onAdmissionComplete }) {
   const [step, setStep] = useState(1);
@@ -42,7 +43,7 @@ export default function AdmissionForm({ onAdmissionComplete }) {
     };
 
     try {
-      const response = await fetch('/api/students', {
+      const response = await apiFetch('/api/students', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)

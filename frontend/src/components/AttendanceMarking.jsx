@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { apiFetch } from '../api.js';
 
 export default function AttendanceMarking() {
   const [selectedClass, setSelectedClass] = useState('Class 10');
@@ -15,7 +16,7 @@ export default function AttendanceMarking() {
     setMessage('');
     try {
       // 1. Fetch students
-      const studRes = await fetch('/api/students');
+      const studRes = await apiFetch('/api/students');
       const studData = await studRes.json();
       
       // Filter students by selected class
@@ -23,7 +24,7 @@ export default function AttendanceMarking() {
       setStudents(filtered);
 
       // 2. Fetch attendance for date
-      const attRes = await fetch(`/api/attendance?date=${selectedDate}`);
+      const attRes = await apiFetch(`/api/attendance?date=${selectedDate}`);
       const attData = await attRes.json();
 
       // Map existing records
@@ -63,7 +64,7 @@ export default function AttendanceMarking() {
     }));
 
     try {
-      const response = await fetch('/api/attendance', {
+      const response = await apiFetch('/api/attendance', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

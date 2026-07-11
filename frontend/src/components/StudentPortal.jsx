@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { apiFetch } from '../api.js';
 
 export default function StudentPortal({ user, activeTab = 'dashboard' }) {
   const [studentDetails, setStudentDetails] = useState(null);
@@ -14,7 +15,7 @@ export default function StudentPortal({ user, activeTab = 'dashboard' }) {
   const fetchStudentData = async () => {
     try {
       // 1. Fetch student list to find this student
-      const studRes = await fetch('/api/students');
+      const studRes = await apiFetch('/api/students');
       const studData = await studRes.json();
       // Default to roll R-1042 (Arun Kumar) if no matching user roll
       const student = studData.find(s => s.name === user.name) || studData.find(s => s.rollNo === 'R-1042') || studData[0];
@@ -22,18 +23,18 @@ export default function StudentPortal({ user, activeTab = 'dashboard' }) {
 
       if (student) {
         // 2. Fetch marks for this student
-        const marksRes = await fetch('/api/marks?testName=Unit Test 2 — Trigonometry');
+        const marksRes = await apiFetch('/api/marks?testName=Unit Test 2 — Trigonometry');
         const marksData = await marksRes.json();
         setMarks(marksData.filter(m => m.studentId === student.id));
 
         // 3. Fetch this student's fee record for the current month
-        const feeRes = await fetch('/api/fees?month=July');
+        const feeRes = await apiFetch('/api/fees?month=July');
         const feeData = await feeRes.json();
         setFee(feeData.find(f => f.studentId === student.id) || null);
       }
 
       // 4. Fetch notices
-      const noticeRes = await fetch('/api/notices');
+      const noticeRes = await apiFetch('/api/notices');
       const noticeData = await noticeRes.json();
       setNotices(noticeData.slice(0, 3));
     } catch (err) {
