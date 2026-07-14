@@ -57,7 +57,7 @@ export default function AdmissionForm({ onAdmissionComplete }) {
       if (status === 'draft') {
         setMessage('Draft saved successfully! You can find it in the admissions log.');
       } else {
-        setMessage('Student admitted successfully!');
+        setMessage(`Student admitted successfully! A student login was created — username: ${email} · password: password`);
         if (onAdmissionComplete) {
           setTimeout(() => {
             onAdmissionComplete(data);

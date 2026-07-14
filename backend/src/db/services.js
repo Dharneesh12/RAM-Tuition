@@ -61,6 +61,40 @@ const mockDb = {
 };
 
 // -------------------------------------------------------------
+// ACCOUNT LINKING HELPERS
+// Keep login accounts (users) in sync with student/staff records so that
+// anything the director creates/updates/deletes reflects EVERYWHERE:
+// the directory list, the User Management screen, and the login itself.
+// Auto-provisioned accounts use the default password 'password'.
+// -------------------------------------------------------------
+const DEFAULT_PASSWORD = 'password';
+
+const ensureLinkedUser = ({ name, username, role }) => {
+  if (!username) return;
+  if (mockDb.users.some(u => u.username === username)) return; // already has a login
+  const nextId = mockDb.users.length ? Math.max(...mockDb.users.map(u => u.id)) + 1 : 1;
+  mockDb.users.push({ id: nextId, username, password: DEFAULT_PASSWORD, role, name });
+};
+
+const removeLinkedUser = (username) => {
+  if (!username) return;
+  const idx = mockDb.users.findIndex(u => u.username === username);
+  if (idx !== -1) mockDb.users.splice(idx, 1);
+};
+
+// Sync a login account when the underlying person's name/email changes.
+const syncLinkedUser = (oldUsername, { name, username, role }) => {
+  const idx = mockDb.users.findIndex(u => u.username === oldUsername);
+  if (idx === -1) {
+    if (username && role) ensureLinkedUser({ name, username, role }); // create if missing (e.g. draft → active)
+    return;
+  }
+  if (username) mockDb.users[idx].username = username;
+  if (name) mockDb.users[idx].name = name;
+  if (role) mockDb.users[idx].role = role;
+};
+
+// -------------------------------------------------------------
 // USER SERVICES
 // -------------------------------------------------------------
 export const getUserByUsername = async (username) => {
@@ -142,20 +176,27 @@ export const createStaff = async (staffData) => {
   const nextId = mockDb.staff.length > 0 ? Math.max(...mockDb.staff.map(s => s.id)) + 1 : 1;
   const newStaff = { id: nextId, ...staffData, status: staffData.status || 'active' };
   mockDb.staff.push(newStaff);
+  // Auto-provision a staff login account.
+  ensureLinkedUser({ name: newStaff.name, username: newStaff.email, role: 'staff' });
   return newStaff;
 };
 
 export const updateStaff = async (staffId, updates) => {
   const idx = mockDb.staff.findIndex(s => s.id === staffId);
   if (idx === -1) return null;
-  mockDb.staff[idx] = { ...mockDb.staff[idx], ...updates };
-  return mockDb.staff[idx];
+  const prev = mockDb.staff[idx];
+  mockDb.staff[idx] = { ...prev, ...updates };
+  const next = mockDb.staff[idx];
+  syncLinkedUser(prev.email, { name: next.name, username: next.email, role: 'staff' });
+  return next;
 };
 
 export const deleteStaff = async (staffId) => {
   const idx = mockDb.staff.findIndex(s => s.id === staffId);
   if (idx === -1) return false;
+  const removed = mockDb.staff[idx];
   mockDb.staff.splice(idx, 1);
+  removeLinkedUser(removed.email); // remove the linked login account too
   return true;
 };
 
@@ -182,6 +223,10 @@ export const createStudent = async (studentData) => {
       amount,
       status: 'pending'
     });
+    // Auto-provision a login account for admitted (non-draft) students.
+    if (newStudent.status !== 'draft') {
+      ensureLinkedUser({ name: newStudent.name, username: newStudent.email, role: 'student' });
+    }
     return newStudent;
   }
   const rollNo = `R-${1042 + (await db.select().from(schema.students)).length}`;
@@ -196,8 +241,15 @@ export const updateStudent = async (studentId, updates) => {
   if (isMock) {
     const idx = mockDb.students.findIndex(s => s.id === studentId);
     if (idx === -1) return null;
-    mockDb.students[idx] = { ...mockDb.students[idx], ...updates };
-    return mockDb.students[idx];
+    const prev = mockDb.students[idx];
+    mockDb.students[idx] = { ...prev, ...updates };
+    const next = mockDb.students[idx];
+    // Keep the linked login account in sync (name/email), or create it if the
+    // student was just promoted from draft → active.
+    if (next.status !== 'draft') {
+      syncLinkedUser(prev.email, { name: next.name, username: next.email, role: 'student' });
+    }
+    return next;
   }
   const [updated] = await db.update(schema.students)
     .set(updates)
@@ -210,10 +262,12 @@ export const deleteStudent = async (studentId) => {
   if (isMock) {
     const idx = mockDb.students.findIndex(s => s.id === studentId);
     if (idx === -1) return false;
+    const removed = mockDb.students[idx];
     mockDb.students.splice(idx, 1);
     mockDb.fees = mockDb.fees.filter(f => f.studentId !== studentId);
     mockDb.attendance = mockDb.attendance.filter(a => a.studentId !== studentId);
     mockDb.marks = mockDb.marks.filter(m => m.studentId !== studentId);
+    removeLinkedUser(removed.email); // remove the linked login account too
     return true;
   }
   await db.delete(schema.students).where(eq(schema.students.id, studentId));

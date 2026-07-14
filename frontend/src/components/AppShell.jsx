@@ -186,7 +186,10 @@ export default function AppShell({ user, activeTab, setActiveTab, onLogout, chil
           </div>
         </div>
 
-        <div className="content">{children}</div>
+        {/* keyed by tab so each view replays the 3D entrance animation */}
+        <div className="content">
+          <div className="view-anim" key={activeTab}>{children}</div>
+        </div>
       </div>
     </div>
   );

@@ -47,6 +47,13 @@ export default function App() {
       return <StudentPortal user={user} activeTab={activeTab} />;
     }
 
+    // Role-based access map — staff only reach their own tabs; everything
+    // else (students, staff, admission, fees, reports, users) is director-only.
+    const staffAllowed = ['dashboard', 'attendance', 'marks', 'workdone', 'notices'];
+    if (user.role === 'staff' && !staffAllowed.includes(activeTab)) {
+      return <DirectorDashboard setActiveTab={setActiveTab} />;
+    }
+
     // DIRECTOR and STAFF views
     switch (activeTab) {
       case 'dashboard':
