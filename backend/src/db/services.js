@@ -16,36 +16,64 @@ const mockDb = {
     { id: 4, name: 'Meera G', email: 'meera@ramtuitioncentre.com', phone: '+91 98765 44444', role: 'Social Science Educator', classes: ['Class 9', 'Class 10'], subjects: ['History', 'Civics', 'Geography'], joined: '2023-08-01', status: 'active' }
   ],
   students: [
-    { id: 1, rollNo: 'R-1042', name: 'Arun Kumar', grade: 'Class 12', school: 'Govt. Hr. Sec. School, Ganapathy', email: 'arun@gmail.com', fatherName: 'Kumar S', fatherWhatsapp: '+91 98765 43211', motherName: 'Anitha K', motherWhatsapp: '+91 98765 12341', subjects: ['Mathematics', 'Physics'], photoUrl: null, status: 'active' },
-    { id: 2, rollNo: 'R-1043', name: 'Sneha Priya', grade: 'Class 10', school: 'Mani Hr. Sec. School, Coimbatore', email: 'sneha@gmail.com', fatherName: 'Priya Raj', fatherWhatsapp: '+91 98765 43212', motherName: 'Devi P', motherWhatsapp: '+91 98765 12342', subjects: ['Mathematics', 'Science'], photoUrl: null, status: 'active' },
-    { id: 3, rollNo: 'R-1044', name: 'Karthik V', grade: 'Class 11', school: 'Govt. Hr. Sec. School, Ganapathy', email: 'karthik@gmail.com', fatherName: 'Venkat R', fatherWhatsapp: '+91 98765 43213', motherName: 'Lakshmi V', motherWhatsapp: '+91 98765 12343', subjects: ['Mathematics'], photoUrl: null, status: 'active' },
-    { id: 4, rollNo: 'R-1045', name: 'Divya M', grade: 'Class 9', school: 'Govt. Hr. Sec. School, Ganapathy', email: 'divya@gmail.com', fatherName: 'Mani T', fatherWhatsapp: '+91 98765 43214', motherName: 'Chitra M', motherWhatsapp: '+91 98765 12344', subjects: ['Science'], photoUrl: null, status: 'active' },
-    { id: 5, rollNo: 'R-1051', name: 'Ranjith V', grade: 'Class 10', school: 'Govt. Hr. Sec. School, Ganapathy', email: 'ranjith@gmail.com', fatherName: 'Vasudevan G', fatherWhatsapp: '+91 98765 43215', motherName: 'Geetha V', motherWhatsapp: '+91 98765 12345', subjects: ['Mathematics'], photoUrl: null, status: 'active' },
-    { id: 6, rollNo: 'R-1052', name: 'Divya M (Class 10)', grade: 'Class 10', school: 'Govt. Hr. Sec. School, Ganapathy', email: 'divya10@gmail.com', fatherName: 'Muthu K', fatherWhatsapp: '+91 98765 43216', motherName: 'Uma M', motherWhatsapp: '+91 98765 12346', subjects: ['Mathematics', 'Science'], photoUrl: null, status: 'active' },
-    { id: 7, rollNo: 'R-1058', name: 'Harini N', grade: 'Class 10', school: 'Govt. Hr. Sec. School, Ganapathy', email: 'harini@gmail.com', fatherName: 'Narayanan A', fatherWhatsapp: '+91 98765 43217', motherName: 'Saritha N', motherWhatsapp: '+91 98765 12347', subjects: ['Mathematics', 'Science'], photoUrl: null, status: 'active' }
+    { id: 1, rollNo: 'R-1042', name: 'Arun Kumar', grade: 'Class 12', board: 'CBSE', school: 'Govt. Hr. Sec. School, Ganapathy', email: 'arun@gmail.com', fatherName: 'Kumar S', fatherWhatsapp: '+91 98765 43211', motherName: 'Anitha K', motherWhatsapp: '+91 98765 12341', subjects: ['Mathematics', 'Physics'], photoUrl: null, status: 'active' },
+    { id: 2, rollNo: 'R-1043', name: 'Sneha Priya', grade: 'Class 10', board: 'State Board', school: 'Mani Hr. Sec. School, Coimbatore', email: 'sneha@gmail.com', fatherName: 'Priya Raj', fatherWhatsapp: '+91 98765 43212', motherName: 'Devi P', motherWhatsapp: '+91 98765 12342', subjects: ['Mathematics', 'Science'], photoUrl: null, status: 'active' },
+    { id: 3, rollNo: 'R-1044', name: 'Karthik V', grade: 'Class 11', board: 'CBSE', school: 'Govt. Hr. Sec. School, Ganapathy', email: 'karthik@gmail.com', fatherName: 'Venkat R', fatherWhatsapp: '+91 98765 43213', motherName: 'Lakshmi V', motherWhatsapp: '+91 98765 12343', subjects: ['Mathematics'], photoUrl: null, status: 'active' },
+    { id: 4, rollNo: 'R-1045', name: 'Divya M', grade: 'Class 9', board: 'State Board', school: 'Govt. Hr. Sec. School, Ganapathy', email: 'divya@gmail.com', fatherName: 'Mani T', fatherWhatsapp: '+91 98765 43214', motherName: 'Chitra M', motherWhatsapp: '+91 98765 12344', subjects: ['Science'], photoUrl: null, status: 'active' },
+    { id: 5, rollNo: 'R-1051', name: 'Ranjith V', grade: 'Class 10', board: 'State Board', school: 'Govt. Hr. Sec. School, Ganapathy', email: 'ranjith@gmail.com', fatherName: 'Vasudevan G', fatherWhatsapp: '+91 98765 43215', motherName: 'Geetha V', motherWhatsapp: '+91 98765 12345', subjects: ['Mathematics'], photoUrl: null, status: 'active' },
+    { id: 6, rollNo: 'R-1052', name: 'Divya M (Class 10)', grade: 'Class 10', board: 'CBSE', school: 'Govt. Hr. Sec. School, Ganapathy', email: 'divya10@gmail.com', fatherName: 'Muthu K', fatherWhatsapp: '+91 98765 43216', motherName: 'Uma M', motherWhatsapp: '+91 98765 12346', subjects: ['Mathematics', 'Science'], photoUrl: null, status: 'active' },
+    { id: 7, rollNo: 'R-1058', name: 'Harini N', grade: 'Class 10', board: 'State Board', school: 'Govt. Hr. Sec. School, Ganapathy', email: 'harini@gmail.com', fatherName: 'Narayanan A', fatherWhatsapp: '+91 98765 43217', motherName: 'Saritha N', motherWhatsapp: '+91 98765 12347', subjects: ['Mathematics', 'Science'], photoUrl: null, status: 'active' }
   ],
   attendance: [
-    { id: 1, studentId: 1, date: '2026-07-08', status: 'present' },
-    { id: 2, studentId: 2, date: '2026-07-08', status: 'present' },
-    { id: 3, studentId: 5, date: '2026-07-08', status: 'absent' },
-    { id: 4, studentId: 6, date: '2026-07-08', status: 'present' },
-    { id: 5, studentId: 7, date: '2026-07-08', status: 'present' }
+    // Spread across several July dates so the month view + absent-date list are meaningful
+    { id: 1, studentId: 1, date: '2026-07-01', status: 'present' },
+    { id: 2, studentId: 1, date: '2026-07-02', status: 'present' },
+    { id: 3, studentId: 1, date: '2026-07-03', status: 'absent' },
+    { id: 4, studentId: 1, date: '2026-07-06', status: 'present' },
+    { id: 5, studentId: 1, date: '2026-07-07', status: 'present' },
+    { id: 6, studentId: 1, date: '2026-07-08', status: 'present' },
+    { id: 7, studentId: 1, date: '2026-07-09', status: 'present' },
+    { id: 8, studentId: 1, date: '2026-07-10', status: 'absent' },
+    { id: 9, studentId: 2, date: '2026-07-01', status: 'present' },
+    { id: 10, studentId: 2, date: '2026-07-08', status: 'present' },
+    { id: 11, studentId: 5, date: '2026-07-08', status: 'absent' },
+    { id: 12, studentId: 5, date: '2026-07-03', status: 'absent' },
+    { id: 13, studentId: 6, date: '2026-07-08', status: 'present' },
+    { id: 14, studentId: 7, date: '2026-07-08', status: 'present' }
   ],
+  // testMonth lets the student portal group results into a month view.
   marks: [
-    { id: 1, studentId: 1, testName: 'Unit Test 2 — Trigonometry', subject: 'Maths', marksObtained: 46, maxMarks: 50, remarks: 'Minor calculation slip in Q7' },
-    { id: 2, studentId: 2, testName: 'Unit Test 2 — Trigonometry', subject: 'Maths', marksObtained: 39, maxMarks: 50, remarks: 'Identity proof incomplete' },
-    { id: 3, studentId: 5, testName: 'Unit Test 2 — Trigonometry', subject: 'Maths', marksObtained: 21, maxMarks: 50, remarks: 'Weak on formulae · needs revision of ratios' },
-    { id: 4, studentId: 6, testName: 'Unit Test 2 — Trigonometry', subject: 'Maths', marksObtained: 44, maxMarks: 50, remarks: '—' },
-    { id: 5, studentId: 7, testName: 'Unit Test 2 — Trigonometry', subject: 'Maths', marksObtained: 18, maxMarks: 50, remarks: 'Absent for 2 topics · arrange doubt session' }
+    // June test
+    { id: 6, studentId: 1, testName: 'Unit Test 1 — Algebra', testMonth: 'June', subject: 'Maths', marksObtained: 42, maxMarks: 50, remarks: 'Good improvement' },
+    { id: 7, studentId: 2, testName: 'Unit Test 1 — Algebra', testMonth: 'June', subject: 'Maths', marksObtained: 35, maxMarks: 50, remarks: 'Revise quadratic equations' },
+    { id: 8, studentId: 1, testName: 'Unit Test 1 — Algebra', testMonth: 'June', subject: 'Physics', marksObtained: 40, maxMarks: 50, remarks: 'Steady' },
+    // July test
+    { id: 1, studentId: 1, testName: 'Unit Test 2 — Trigonometry', testMonth: 'July', subject: 'Maths', marksObtained: 46, maxMarks: 50, remarks: 'Minor calculation slip in Q7' },
+    { id: 2, studentId: 2, testName: 'Unit Test 2 — Trigonometry', testMonth: 'July', subject: 'Maths', marksObtained: 39, maxMarks: 50, remarks: 'Identity proof incomplete' },
+    { id: 3, studentId: 5, testName: 'Unit Test 2 — Trigonometry', testMonth: 'July', subject: 'Maths', marksObtained: 21, maxMarks: 50, remarks: 'Weak on formulae · needs revision of ratios' },
+    { id: 4, studentId: 6, testName: 'Unit Test 2 — Trigonometry', testMonth: 'July', subject: 'Maths', marksObtained: 44, maxMarks: 50, remarks: '—' },
+    { id: 5, studentId: 7, testName: 'Unit Test 2 — Trigonometry', testMonth: 'July', subject: 'Maths', marksObtained: 18, maxMarks: 50, remarks: 'Absent for 2 topics · arrange doubt session' }
   ],
+  // Each fee record: amount = monthly tuition total; advance = amount paid ahead
+  // toward future months. Per-subject split is derived on the client from the
+  // student's enrolled subjects.
   fees: [
-    { id: 1, studentId: 1, month: 'July', amount: 2500, status: 'paid' },
-    { id: 2, studentId: 2, month: 'July', amount: 2000, status: 'pending' },
-    { id: 3, studentId: 3, month: 'July', amount: 2200, status: 'paid' },
-    { id: 4, studentId: 4, month: 'July', amount: 1800, status: 'pending' },
-    { id: 5, studentId: 5, month: 'July', amount: 2000, status: 'paid' },
-    { id: 6, studentId: 6, month: 'July', amount: 2000, status: 'paid' },
-    { id: 7, studentId: 7, month: 'July', amount: 2000, status: 'paid' }
+    // Previous month (June) — a couple left pending to surface carry-over dues
+    { id: 8, studentId: 1, month: 'June', amount: 2500, advance: 0, status: 'paid' },
+    { id: 9, studentId: 2, month: 'June', amount: 2000, advance: 0, status: 'pending' },
+    { id: 10, studentId: 3, month: 'June', amount: 2200, advance: 0, status: 'paid' },
+    { id: 11, studentId: 4, month: 'June', amount: 1800, advance: 0, status: 'pending' },
+    { id: 12, studentId: 5, month: 'June', amount: 2000, advance: 0, status: 'paid' },
+    { id: 13, studentId: 6, month: 'June', amount: 2000, advance: 0, status: 'paid' },
+    { id: 14, studentId: 7, month: 'June', amount: 2000, advance: 0, status: 'paid' },
+    // Current month (July)
+    { id: 1, studentId: 1, month: 'July', amount: 2500, advance: 1000, status: 'paid' },
+    { id: 2, studentId: 2, month: 'July', amount: 2000, advance: 0, status: 'pending' },
+    { id: 3, studentId: 3, month: 'July', amount: 2200, advance: 0, status: 'paid' },
+    { id: 4, studentId: 4, month: 'July', amount: 1800, advance: 0, status: 'pending' },
+    { id: 5, studentId: 5, month: 'July', amount: 2000, advance: 500, status: 'paid' },
+    { id: 6, studentId: 6, month: 'July', amount: 2000, advance: 0, status: 'paid' },
+    { id: 7, studentId: 7, month: 'July', amount: 2000, advance: 0, status: 'paid' }
   ],
   notices: [
     { id: 1, title: 'Quarterly Exam Timetable Released', message: 'Class 10 & 12 quarterly exams begin 22 July. Timetable shared on parent WhatsApp groups.', publishDate: '2026-07-05', expiryDate: '2026-07-22', audience: 'All' },
@@ -221,6 +249,7 @@ export const createStudent = async (studentData) => {
       studentId: nextId,
       month: 'July',
       amount,
+      advance: 0,
       status: 'pending'
     });
     // Auto-provision a login account for admitted (non-draft) students.
@@ -282,6 +311,11 @@ export const getAttendanceByDate = async (date) => {
   return await db.select().from(schema.attendance).where(eq(schema.attendance.date, date));
 };
 
+export const getAttendanceByStudent = async (studentId) => {
+  if (isMock) return mockDb.attendance.filter(a => a.studentId === studentId).sort((a, b) => a.date.localeCompare(b.date));
+  return await db.select().from(schema.attendance).where(eq(schema.attendance.studentId, studentId));
+};
+
 export const saveAttendance = async (date, records) => {
   if (isMock) {
     records.forEach(rec => {
@@ -314,6 +348,11 @@ export const saveAttendance = async (date, records) => {
 export const getMarksByTest = async (testName) => {
   if (isMock) return mockDb.marks.filter(m => m.testName === testName);
   return await db.select().from(schema.marks).where(eq(schema.marks.testName, testName));
+};
+
+export const getMarksByStudent = async (studentId) => {
+  if (isMock) return mockDb.marks.filter(m => m.studentId === studentId);
+  return await db.select().from(schema.marks).where(eq(schema.marks.studentId, studentId));
 };
 
 export const getAllTestNames = async () => {
@@ -372,6 +411,11 @@ export const saveMarks = async (testName, subject, records) => {
 export const getFeesByMonth = async (month) => {
   if (isMock) return mockDb.fees.filter(f => f.month === month);
   return await db.select().from(schema.fees).where(eq(schema.fees.month, month));
+};
+
+export const getFeesByStudent = async (studentId) => {
+  if (isMock) return mockDb.fees.filter(f => f.studentId === studentId);
+  return await db.select().from(schema.fees).where(eq(schema.fees.studentId, studentId));
 };
 
 export const updateFeeStatus = async (feeId, status) => {

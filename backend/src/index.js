@@ -153,13 +153,13 @@ app.get('/api/students', async (req, res) => {
 });
 
 app.post('/api/students', async (req, res) => {
-  const { name, grade, school, email, fatherName, fatherWhatsapp, motherName, motherWhatsapp, subjects, photoUrl, status } = req.body;
+  const { name, grade, board, school, email, fatherName, fatherWhatsapp, motherName, motherWhatsapp, subjects, photoUrl, status } = req.body;
   if (!name || !grade || !school || !email || !fatherName || !fatherWhatsapp || !motherName || !motherWhatsapp || !subjects) {
     return res.status(400).json({ error: 'Missing required admission fields' });
   }
   try {
     const student = await services.createStudent({
-      name, grade, school, email, fatherName, fatherWhatsapp, motherName, motherWhatsapp, subjects, photoUrl, status: status || 'active'
+      name, grade, board: board || 'State Board', school, email, fatherName, fatherWhatsapp, motherName, motherWhatsapp, subjects, photoUrl, status: status || 'active'
     });
     res.status(201).json(student);
   } catch (error) {
@@ -204,6 +204,15 @@ app.get('/api/attendance', async (req, res) => {
   }
 });
 
+app.get('/api/attendance/student/:id', async (req, res) => {
+  try {
+    const records = await services.getAttendanceByStudent(parseInt(req.params.id));
+    res.json(records);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 app.post('/api/attendance', async (req, res) => {
   const { date, records } = req.body;
   if (!date || !records || !Array.isArray(records)) {
@@ -226,6 +235,15 @@ app.get('/api/marks', async (req, res) => {
   try {
     const marks = await services.getMarksByTest(testName);
     res.json(marks);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/api/marks/student/:id', async (req, res) => {
+  try {
+    const records = await services.getMarksByStudent(parseInt(req.params.id));
+    res.json(records);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -262,6 +280,15 @@ app.get('/api/fees', async (req, res) => {
   try {
     const fees = await services.getFeesByMonth(month);
     res.json(fees);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/api/fees/student/:id', async (req, res) => {
+  try {
+    const records = await services.getFeesByStudent(parseInt(req.params.id));
+    res.json(records);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

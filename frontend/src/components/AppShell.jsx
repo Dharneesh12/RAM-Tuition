@@ -169,13 +169,15 @@ export default function AppShell({ user, activeTab, setActiveTab, onLogout, chil
             <h2>{getTabLabel(activeTab)}</h2>
             <div className="crumb">Home · {getTabLabel(activeTab)}</div>
           </div>
-          <div className="tb-search">
-            <svg className="ic">
-              <use href="#i-search" />
-            </svg>{' '}
-            Search students, staff…
-          </div>
-          <div className="tb-ic">
+          {user.role !== 'student' && (
+            <div className="tb-search">
+              <svg className="ic">
+                <use href="#i-search" />
+              </svg>{' '}
+              Search students, staff…
+            </div>
+          )}
+          <div className="tb-ic" style={user.role === 'student' ? { marginLeft: 'auto' } : {}}>
             <svg className="ic">
               <use href="#i-bell" />
             </svg>

@@ -29,6 +29,7 @@ function EditStudentModal({ student, onSave, onClose }) {
   const [form, setForm] = useState({
     name: student.name || '',
     grade: student.grade || 'Class 10',
+    board: student.board || 'State Board',
     school: student.school || '',
     email: student.email || '',
     fatherName: student.fatherName || '',
@@ -80,6 +81,13 @@ function EditStudentModal({ student, onSave, onClose }) {
             <label>Class / Grade</label>
             <select className="inp" value={form.grade} onChange={e => upd('grade', e.target.value)}>
               {['Class 9', 'Class 10', 'Class 11', 'Class 12'].map(g => <option key={g}>{g}</option>)}
+            </select>
+          </div>
+          <div className="field">
+            <label>Board</label>
+            <select className="inp" value={form.board} onChange={e => upd('board', e.target.value)}>
+              <option value="State Board">State Board</option>
+              <option value="CBSE">CBSE</option>
             </select>
           </div>
           <div className="field" style={{ gridColumn: 'span 2' }}>
@@ -241,7 +249,10 @@ export default function StudentsList({ setActiveTab }) {
                         <div><b>{s.name}</b><br /><small style={{ color: 'var(--muted)' }}>{s.email}</small></div>
                       </div>
                     </td>
-                    <td><span className="subj" style={{ background: 'var(--sky2)', color: 'var(--ink)' }}>{s.grade}</span></td>
+                    <td>
+                      <span className="subj" style={{ background: 'var(--sky2)', color: 'var(--ink)' }}>{s.grade}</span>
+                      {s.board && <div style={{ marginTop: 4, fontSize: '.7rem', fontWeight: 700, color: s.board === 'CBSE' ? 'var(--indigo)' : 'var(--mint-d)' }}>{s.board}</div>}
+                    </td>
                     <td style={{ fontSize: '.82rem', color: 'var(--ink2)', maxWidth: 160 }}>{s.school}</td>
                     <td>
                       <div style={{ fontSize: '.78rem', lineHeight: 1.6 }}>

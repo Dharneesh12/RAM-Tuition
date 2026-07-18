@@ -57,7 +57,7 @@ export default function App() {
     // DIRECTOR and STAFF views
     switch (activeTab) {
       case 'dashboard':
-        return <DirectorDashboard setActiveTab={setActiveTab} />;
+        return <DirectorDashboard setActiveTab={setActiveTab} user={user} />;
       case 'students':
         return <StudentsList setActiveTab={setActiveTab} />;
       case 'staff':
@@ -80,7 +80,7 @@ export default function App() {
         // Account management is director-only
         return user.role === 'director' ? <UserManagement /> : <DirectorDashboard setActiveTab={setActiveTab} />;
       default:
-        return <DirectorDashboard setActiveTab={setActiveTab} />;
+        return <DirectorDashboard setActiveTab={setActiveTab} user={user} />;
     }
   };
 

@@ -5,6 +5,7 @@ export default function AdmissionForm({ onAdmissionComplete }) {
   const [step, setStep] = useState(1);
   const [name, setName] = useState('Meena Lakshmi');
   const [grade, setGrade] = useState('Class 10');
+  const [board, setBoard] = useState('State Board');
   const [school, setSchool] = useState('Govt. Hr. Sec. School, Ganapathy');
   const [email, setEmail] = useState('meena@gmail.com');
   const [fatherName, setFatherName] = useState('Ramesh Kumar');
@@ -31,6 +32,7 @@ export default function AdmissionForm({ onAdmissionComplete }) {
     const payload = {
       name,
       grade,
+      board,
       school,
       email,
       fatherName,
@@ -119,6 +121,15 @@ export default function AdmissionForm({ onAdmissionComplete }) {
                 <option value="Class 10">Class 10</option>
                 <option value="Class 11">Class 11</option>
                 <option value="Class 12">Class 12</option>
+              </select>
+            </div>
+            <div className="field">
+              <label>
+                Board <span className="req">*</span>
+              </label>
+              <select className="inp" value={board} onChange={(e) => setBoard(e.target.value)}>
+                <option value="State Board">State Board</option>
+                <option value="CBSE">CBSE</option>
               </select>
             </div>
             <div className="field">

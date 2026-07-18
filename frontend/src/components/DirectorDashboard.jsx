@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { apiFetch } from '../api.js';
 
-export default function DirectorDashboard({ setActiveTab }) {
+export default function DirectorDashboard({ setActiveTab, user }) {
+  const isStaff = user?.role === 'staff';
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -40,8 +41,8 @@ export default function DirectorDashboard({ setActiveTab }) {
 
   return (
     <div>
-      {/* KPI Cards Section */}
-      <div className="kpis">
+      {/* KPI Cards Section — staff sees only Students + Low Scores (no staff count / no fees) */}
+      <div className="kpis" style={isStaff ? { gridTemplateColumns: 'repeat(2,1fr)' } : {}}>
         <div className="kpi k1">
           <span className="trend up">▲ 6%</span>
           <div className="kic">
@@ -53,26 +54,30 @@ export default function DirectorDashboard({ setActiveTab }) {
           <div className="lbl">Total Students</div>
         </div>
 
-        <div className="kpi k2">
-          <div className="kic">
-            <svg className="ic">
-              <use href="#i-teacher" />
-            </svg>
+        {!isStaff && (
+          <div className="kpi k2">
+            <div className="kic">
+              <svg className="ic">
+                <use href="#i-teacher" />
+              </svg>
+            </div>
+            <div className="big">{stats.totalStaff}</div>
+            <div className="lbl">Staff Members</div>
           </div>
-          <div className="big">{stats.totalStaff}</div>
-          <div className="lbl">Staff Members</div>
-        </div>
+        )}
 
-        <div className="kpi k3">
-          <span className="trend dn">{stats.pendingCount} due</span>
-          <div className="kic">
-            <svg className="ic">
-              <use href="#i-wallet" />
-            </svg>
+        {!isStaff && (
+          <div className="kpi k3">
+            <span className="trend dn">{stats.pendingCount} due</span>
+            <div className="kic">
+              <svg className="ic">
+                <use href="#i-wallet" />
+              </svg>
+            </div>
+            <div className="big">{formatCurrency(stats.feesPendingAmount)}</div>
+            <div className="lbl">Fees Pending</div>
           </div>
-          <div className="big">{formatCurrency(stats.feesPendingAmount)}</div>
-          <div className="lbl">Fees Pending</div>
-        </div>
+        )}
 
         <div className="kpi k4">
           <div className="kic">
@@ -85,8 +90,8 @@ export default function DirectorDashboard({ setActiveTab }) {
         </div>
       </div>
 
-      {/* Grid containing Charts */}
-      <div className="grid2">
+      {/* Grid containing Charts — staff sees attendance only (no fee status) */}
+      <div className="grid2" style={isStaff ? { gridTemplateColumns: '1fr' } : {}}>
         <div className="panel">
           <div className="panel-h">
             <h4>Attendance Overview</h4>
@@ -120,7 +125,7 @@ export default function DirectorDashboard({ setActiveTab }) {
           </div>
         </div>
 
-        <div className="panel">
+        {!isStaff && <div className="panel">
           <div className="panel-h">
             <h4>Fee Status</h4>
           </div>
@@ -153,7 +158,7 @@ export default function DirectorDashboard({ setActiveTab }) {
               </div>
             </div>
           </div>
-        </div>
+        </div>}
       </div>
 
       {/* Recent Admissions Table */}

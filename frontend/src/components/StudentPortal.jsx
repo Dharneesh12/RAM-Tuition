@@ -6,6 +6,8 @@ export default function StudentPortal({ user, activeTab = 'dashboard' }) {
   const [marks, setMarks] = useState([]);
   const [notices, setNotices] = useState([]);
   const [fee, setFee] = useState(null);
+  const [allFees, setAllFees] = useState([]);      // every month's fee record
+  const [attendance, setAttendance] = useState([]); // this student's day-by-day records
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -22,15 +24,19 @@ export default function StudentPortal({ user, activeTab = 'dashboard' }) {
       setStudentDetails(student);
 
       if (student) {
-        // 2. Fetch marks for this student
-        const marksRes = await apiFetch('/api/marks?testName=Unit Test 2 — Trigonometry');
-        const marksData = await marksRes.json();
-        setMarks(marksData.filter(m => m.studentId === student.id));
+        // 2. Fetch ALL marks for this student (across every test / month)
+        const marksRes = await apiFetch(`/api/marks/student/${student.id}`);
+        setMarks(await marksRes.json());
 
-        // 3. Fetch this student's fee record for the current month
-        const feeRes = await apiFetch('/api/fees?month=July');
+        // 3. Fetch ALL fee records for this student (every month, incl. carry-over)
+        const feeRes = await apiFetch(`/api/fees/student/${student.id}`);
         const feeData = await feeRes.json();
-        setFee(feeData.find(f => f.studentId === student.id) || null);
+        setAllFees(feeData);
+        setFee(feeData.find(f => f.month === 'July') || null);
+
+        // 4. Fetch this student's day-by-day attendance
+        const attRes = await apiFetch(`/api/attendance/student/${student.id}`);
+        setAttendance(await attRes.json());
       }
 
       // 4. Fetch notices
@@ -67,6 +73,31 @@ export default function StudentPortal({ user, activeTab = 'dashboard' }) {
   const feePaid = feeStatus === 'paid';
   const feeStatusLabel = feePaid ? 'Paid' : 'Pending';
 
+  // --- Per-subject fee split + advance + previous-month dues ---
+  const subjectList = Array.isArray(student.subjects) ? student.subjects : [];
+  const advance = fee ? (fee.advance || 0) : 0;
+  const perSubjectFee = subjectList.length ? Math.round(feeAmount / subjectList.length) : feeAmount;
+  const previousDues = allFees.filter(f => f.status === 'pending' && f.month !== 'July');
+  const inr = (v) => `₹${Number(v || 0).toLocaleString('en-IN')}`;
+
+  // --- Attendance stats (day-by-day, month view + absent dates) ---
+  const presentCount = attendance.filter(a => a.status === 'present').length;
+  const absentRecords = attendance.filter(a => a.status === 'absent');
+  const totalMarked = attendance.length;
+  const attendancePct = totalMarked ? Math.round((presentCount / totalMarked) * 100) : 96;
+  const fmtDay = (d) => {
+    const parts = (d || '').split('-');
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return parts.length === 3 ? `${parts[2]} ${months[parseInt(parts[1], 10) - 1]}` : d;
+  };
+
+  // --- Marks grouped by month (month view for test marks) ---
+  const marksByMonth = marks.reduce((acc, m) => {
+    const key = m.testMonth || 'Other';
+    (acc[key] = acc[key] || []).push(m);
+    return acc;
+  }, {});
+
   // -----------------------------------------------------------------
   // Reusable sub-views (each maps to a sidebar tab)
   // -----------------------------------------------------------------
@@ -92,7 +123,7 @@ export default function StudentPortal({ user, activeTab = 'dashboard' }) {
       </div>
       <h4 style={{ fontFamily: 'var(--disp)' }}>{student.name}</h4>
       <div style={{ color: 'var(--muted)', fontSize: '.85rem', margin: '2px 0 12px' }}>
-        Roll No · {student.rollNo} · {student.grade}
+        Roll No · {student.rollNo} · {student.grade}{student.board ? ` · ${student.board}` : ''}
       </div>
       <div className="chipset" style={{ justifyContent: 'center' }}>
         {Array.isArray(student.subjects) &&
@@ -133,68 +164,99 @@ export default function StudentPortal({ user, activeTab = 'dashboard' }) {
         <h4>My Attendance</h4>
         <span className="lnk">July 2026</span>
       </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '22px' }}>
-        <div className="ring">
+      <div style={{ display: 'flex', alignItems: 'center', gap: '22px', flexWrap: 'wrap' }}>
+        <div className="ring" style={{ background: `conic-gradient(var(--mint) 0 ${attendancePct}%, #e7ecf7 ${attendancePct}% 100%)` }}>
           <div className="in">
-            <b>96%</b>
+            <b>{attendancePct}%</b>
             <small>Present</small>
           </div>
         </div>
         <div style={{ fontSize: '.9rem', color: 'var(--ink2)', lineHeight: 2 }}>
-          <b>24</b> / 25 days present
+          <b>{presentCount}</b> / {totalMarked || '—'} days present
           <br />
-          <span style={{ color: 'var(--muted)' }}>1 day absent · above target</span>
+          <span style={{ color: absentRecords.length ? 'var(--red)' : 'var(--muted)' }}>
+            {absentRecords.length} day{absentRecords.length === 1 ? '' : 's'} absent
+          </span>
         </div>
       </div>
+
+      {/* Month view — one chip per marked day (green=present, red=absent) */}
+      <div style={{ marginTop: 18 }}>
+        <div style={{ fontSize: '.78rem', fontWeight: 700, color: 'var(--muted)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '.05em' }}>Month View · July</div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+          {attendance.length === 0 && <span style={{ color: 'var(--muted)', fontSize: '.85rem' }}>No attendance marked yet.</span>}
+          {attendance.map((a) => (
+            <div key={a.id} title={`${fmtDay(a.date)} · ${a.status}`}
+              style={{
+                minWidth: 44, textAlign: 'center', padding: '7px 6px', borderRadius: 10, fontSize: '.72rem', fontWeight: 700,
+                background: a.status === 'present' ? 'var(--green-bg)' : 'var(--red-bg)',
+                color: a.status === 'present' ? '#158a44' : '#d13636',
+                border: `1px solid ${a.status === 'present' ? 'rgba(34,197,94,.25)' : 'rgba(255,77,77,.25)'}`,
+              }}>
+              {fmtDay(a.date)}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Absent dates list */}
+      {absentRecords.length > 0 && (
+        <div style={{ marginTop: 16, background: 'var(--red-bg)', borderRadius: 12, padding: '12px 14px' }}>
+          <b style={{ color: '#d13636', fontSize: '.85rem' }}>Absent dates</b>
+          <div style={{ marginTop: 6, display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+            {absentRecords.map(a => (
+              <span key={a.id} className="pill p-absent">{fmtDay(a.date)}</span>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 
-  const MarksTable = () => (
-    <div className="panel">
-      <div className="panel-h">
-        <h4>Recent Marks</h4>
-        <span className="lnk">Unit Test 2</span>
+  const MarksTable = () => {
+    const months = Object.keys(marksByMonth);
+    return (
+      <div className="panel">
+        <div className="panel-h">
+          <h4>My Marks</h4>
+          <span className="lnk">Month view</span>
+        </div>
+        {marks.length === 0 && (
+          <div className="empty-state"><div className="icon">📝</div><p>No test marks recorded yet.</p></div>
+        )}
+        {months.map((month) => {
+          const rows = marksByMonth[month];
+          return (
+            <div key={month} style={{ marginBottom: 18 }}>
+              <div style={{ fontSize: '.78rem', fontWeight: 700, color: 'var(--blue-d)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '.05em' }}>
+                {month} 2026
+              </div>
+              <table className="tbl">
+                <thead>
+                  <tr><th>Test</th><th>Subject</th><th>Score</th><th>%</th><th>Remarks</th></tr>
+                </thead>
+                <tbody>
+                  {rows.map((m) => {
+                    const pct = Math.round((m.marksObtained / m.maxMarks) * 100);
+                    const low = pct < 50;
+                    return (
+                      <tr key={m.id} className={low ? 'row-low' : ''}>
+                        <td><b>{m.testName}</b></td>
+                        <td>{m.subject}</td>
+                        <td><span className={`pill ${low ? 'p-low' : 'p-paid'}`}>{m.marksObtained}/{m.maxMarks}</span></td>
+                        <td><b>{pct}%</b></td>
+                        <td style={{ color: 'var(--ink2)', fontSize: '.82rem' }}>{m.remarks}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          );
+        })}
       </div>
-      <table className="tbl">
-        <thead>
-          <tr>
-            <th>Test</th>
-            <th>Subject</th>
-            <th>Score</th>
-            <th>Remarks</th>
-          </tr>
-        </thead>
-        <tbody>
-          {marks.map((m) => (
-            <tr key={m.id}>
-              <td>
-                <b>{m.testName}</b>
-              </td>
-              <td>{m.subject}</td>
-              <td>
-                <span className="pill p-paid">
-                  {m.marksObtained}/{m.maxMarks}
-                </span>
-              </td>
-              <td style={{ color: 'var(--ink2)', fontSize: '.82rem' }}>{m.remarks}</td>
-            </tr>
-          ))}
-          {marks.length === 0 && (
-            <tr>
-              <td>
-                <b>Unit Test 2</b>
-              </td>
-              <td>Maths</td>
-              <td>
-                <span className="pill p-paid">46/50</span>
-              </td>
-              <td style={{ color: 'var(--ink2)', fontSize: '.82rem' }}>Calc slip in Q7</td>
-            </tr>
-          )}
-        </tbody>
-      </table>
-    </div>
-  );
+    );
+  };
 
   const NoticesPanel = () => (
     <div className="panel">
@@ -223,24 +285,52 @@ export default function StudentPortal({ user, activeTab = 'dashboard' }) {
   const FeesPanel = () => (
     <div className="panel">
       <div className="panel-h">
-        <h4>My Fees</h4>
-        <span className={`pill ${feePaid ? 'p-paid' : 'p-pending'}`}>{feeStatusLabel}</span>
+        <h4>My Fees · July 2026</h4>
+        <span className={`pill ${feePaid ? 'p-paid' : 'p-pend'}`}>{feeStatusLabel}</span>
       </div>
-      <div style={{ border: '1px solid var(--line)', borderRadius: '14px', padding: '18px', background: 'var(--sky2)' }}>
-        <b style={{ fontFamily: 'var(--disp)', fontSize: '1.05rem' }}>July 2026 Invoice</b>
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '14px', fontSize: '.9rem' }}>
-          <span style={{ color: 'var(--ink2)' }}>Tuition Fee ({student.grade})</span>
-          <b>₹{feeAmount.toLocaleString('en-IN')}</b>
+
+      {/* Previous-month carry-over dues */}
+      {previousDues.length > 0 && (
+        <div style={{ border: '1px solid rgba(255,176,32,.35)', background: 'var(--amber-bg)', borderRadius: 12, padding: '12px 14px', marginBottom: 14 }}>
+          <b style={{ color: '#b4770a', fontSize: '.88rem' }}>⚠️ Pending from previous months</b>
+          {previousDues.map(d => (
+            <div key={d.id} style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6, fontSize: '.85rem' }}>
+              <span style={{ color: 'var(--ink2)' }}>{d.month} tuition fee</span>
+              <b style={{ color: '#b4770a' }}>{inr(d.amount)} · Pending</b>
+            </div>
+          ))}
         </div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '8px', fontSize: '.9rem' }}>
+      )}
+
+      {/* Per-subject fee breakdown */}
+      <div style={{ border: '1px solid var(--line)', borderRadius: '14px', padding: '18px', background: 'var(--sky2)' }}>
+        <b style={{ fontFamily: 'var(--disp)', fontSize: '1.05rem' }}>Fee Breakdown ({student.grade})</b>
+        <div style={{ marginTop: 12 }}>
+          {subjectList.map((sub, i) => (
+            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '7px 0', borderBottom: '1px solid var(--line2)', fontSize: '.9rem' }}>
+              <span style={{ color: 'var(--ink2)' }}>📘 {sub}</span>
+              <b>{inr(perSubjectFee)}</b>
+            </div>
+          ))}
+          {subjectList.length === 0 && (
+            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '7px 0', fontSize: '.9rem' }}>
+              <span style={{ color: 'var(--ink2)' }}>Tuition fee</span><b>{inr(feeAmount)}</b>
+            </div>
+          )}
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 12, paddingTop: 12, borderTop: '2px solid var(--line)', fontSize: '.92rem' }}>
+          <b>Total (July)</b>
+          <b>{inr(feeAmount)}</b>
+        </div>
+        {/* Advance shown separately */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8, fontSize: '.9rem' }}>
+          <span style={{ color: 'var(--ink2)' }}>Advance paid</span>
+          <b style={{ color: advance > 0 ? 'var(--green)' : 'var(--muted)' }}>{advance > 0 ? `− ${inr(advance)}` : inr(0)}</b>
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8, fontSize: '.9rem' }}>
           <span style={{ color: 'var(--ink2)' }}>Status</span>
           <b style={{ color: feePaid ? 'var(--green)' : 'var(--gold)' }}>{feeStatusLabel.toUpperCase()}</b>
         </div>
-        {!feePaid && (
-          <div style={{ marginTop: '8px', fontSize: '.82rem', color: 'var(--muted)' }}>
-            Kindly clear the pending fee before 15 July to avoid late charges.
-          </div>
-        )}
       </div>
     </div>
   );

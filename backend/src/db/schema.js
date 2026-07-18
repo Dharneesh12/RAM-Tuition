@@ -15,6 +15,7 @@ export const students = pgTable('students', {
   rollNo: text('roll_no').notNull().unique(),
   name: text('name').notNull(),
   grade: text('grade').notNull(), // e.g., 'Class 10', 'Class 12'
+  board: text('board').default('State Board'), // 'State Board' | 'CBSE'
   school: text('school').notNull(),
   email: text('email').notNull(),
   fatherName: text('father_name').notNull(),
@@ -51,6 +52,7 @@ export const fees = pgTable('fees', {
   studentId: integer('student_id').references(() => students.id, { onDelete: 'cascade' }).notNull(),
   month: text('month').notNull(), // e.g., 'July'
   amount: integer('amount').notNull(),
+  advance: integer('advance').default(0), // amount paid ahead toward future months
   status: text('status').notNull(), // 'paid', 'pending'
 });
 
