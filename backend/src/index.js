@@ -44,7 +44,7 @@ app.get('/api/users', async (req, res) => {
 });
 
 app.post('/api/users', async (req, res) => {
-  const { username, password, role, name } = req.body;
+  const { username, password, role, name, grade, board, subjects, designation, phone } = req.body;
   if (!username || !password || !role || !name) {
     return res.status(400).json({ error: 'Missing required fields: username, password, role, name' });
   }
@@ -52,7 +52,9 @@ app.post('/api/users', async (req, res) => {
     return res.status(400).json({ error: 'Role must be director, staff, or student' });
   }
   try {
-    const newUser = await services.createUser({ username, password, role, name });
+    // Extra fields (grade/board/subjects for students, designation for staff) let
+    // createUser also provision the matching directory record.
+    const newUser = await services.createUser({ username, password, role, name, grade, board, subjects, designation, phone });
     res.status(201).json(newUser);
   } catch (error) {
     res.status(500).json({ error: error.message });

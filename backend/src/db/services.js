@@ -122,6 +122,61 @@ const syncLinkedUser = (oldUsername, { name, username, role }) => {
   if (role) mockDb.users[idx].role = role;
 };
 
+// When the director creates a login in User Management, also create the matching
+// directory record (student/staff) so the account maps EVERYWHERE, and delete /
+// rename it in step. `username` is used as the person's email key.
+const ensureLinkedPerson = (role, { name, username, extra = {} }) => {
+  if (role === 'student' && !mockDb.students.some(s => s.email === username)) {
+    const id = mockDb.students.length ? Math.max(...mockDb.students.map(s => s.id)) + 1 : 1;
+    const rollNo = `R-${1042 + mockDb.students.length}`;
+    const grade = extra.grade || 'Class 10';
+    mockDb.students.push({
+      id, rollNo, name, grade, board: extra.board || 'State Board',
+      school: extra.school || '—', email: username,
+      fatherName: extra.fatherName || '—', fatherWhatsapp: extra.fatherWhatsapp || '—',
+      motherName: extra.motherName || '—', motherWhatsapp: extra.motherWhatsapp || '—',
+      subjects: (extra.subjects && extra.subjects.length) ? extra.subjects : ['Mathematics'],
+      photoUrl: null, status: 'active',
+    });
+    const classFees = { 'Class 9': 1800, 'Class 10': 2000, 'Class 11': 2200, 'Class 12': 2500 };
+    const feeId = mockDb.fees.length ? Math.max(...mockDb.fees.map(f => f.id)) + 1 : 1;
+    mockDb.fees.push({ id: feeId, studentId: id, month: 'July', amount: classFees[grade] || 2000, advance: 0, status: 'pending' });
+  }
+  if (role === 'staff' && !mockDb.staff.some(s => s.email === username)) {
+    const id = mockDb.staff.length ? Math.max(...mockDb.staff.map(s => s.id)) + 1 : 1;
+    mockDb.staff.push({
+      id, name, email: username, phone: extra.phone || '',
+      role: extra.designation || 'Teacher',
+      classes: extra.classes || [], subjects: extra.subjects || [],
+      joined: '2026-07-15', status: 'active',
+    });
+  }
+};
+
+const removeLinkedPerson = (role, username) => {
+  if (role === 'student') {
+    const idx = mockDb.students.findIndex(s => s.email === username);
+    if (idx !== -1) {
+      const sid = mockDb.students[idx].id;
+      mockDb.students.splice(idx, 1);
+      mockDb.fees = mockDb.fees.filter(f => f.studentId !== sid);
+      mockDb.attendance = mockDb.attendance.filter(a => a.studentId !== sid);
+      mockDb.marks = mockDb.marks.filter(m => m.studentId !== sid);
+    }
+  }
+  if (role === 'staff') {
+    const idx = mockDb.staff.findIndex(s => s.email === username);
+    if (idx !== -1) mockDb.staff.splice(idx, 1);
+  }
+};
+
+const syncLinkedPerson = (role, oldUsername, { name, username }) => {
+  const table = role === 'student' ? mockDb.students : role === 'staff' ? mockDb.staff : null;
+  if (!table) return;
+  const rec = table.find(p => p.email === oldUsername);
+  if (rec) { if (name) rec.name = name; if (username) rec.email = username; }
+};
+
 // -------------------------------------------------------------
 // USER SERVICES
 // -------------------------------------------------------------
@@ -145,14 +200,18 @@ export const getUsers = async () => {
 };
 
 export const createUser = async (userData) => {
+  // Core login fields vs. optional directory fields (grade, board, subjects, designation…)
+  const { username, password, role, name, ...extra } = userData;
   if (isMock) {
     const nextId = mockDb.users.length > 0 ? Math.max(...mockDb.users.map(u => u.id)) + 1 : 1;
-    const newUser = { id: nextId, ...userData };
+    const newUser = { id: nextId, username, password, role, name };
     mockDb.users.push(newUser);
-    const { password, ...safe } = newUser;
+    // Also create the matching student/staff directory record so it maps everywhere.
+    ensureLinkedPerson(role, { name, username, extra });
+    const { password: _pw, ...safe } = newUser;
     return safe;
   }
-  const [newUser] = await db.insert(schema.users).values(userData).returning({
+  const [newUser] = await db.insert(schema.users).values({ username, password, role, name }).returning({
     id: schema.users.id,
     username: schema.users.username,
     role: schema.users.role,
@@ -165,8 +224,12 @@ export const updateUser = async (userId, updates) => {
   if (isMock) {
     const idx = mockDb.users.findIndex(u => u.id === userId);
     if (idx === -1) return null;
+    const prevUsername = mockDb.users[idx].username;
     mockDb.users[idx] = { ...mockDb.users[idx], ...updates };
-    const { password, ...safe } = mockDb.users[idx];
+    const merged = mockDb.users[idx];
+    // Keep the linked student/staff record's name & email in sync with the login.
+    syncLinkedPerson(merged.role, prevUsername, { name: merged.name, username: merged.username });
+    const { password, ...safe } = merged;
     return safe;
   }
   const [updated] = await db.update(schema.users)
@@ -185,7 +248,10 @@ export const deleteUser = async (userId) => {
   if (isMock) {
     const idx = mockDb.users.findIndex(u => u.id === userId);
     if (idx === -1) return false;
+    const removed = mockDb.users[idx];
     mockDb.users.splice(idx, 1);
+    // Also remove the linked student/staff directory record (and its dependents).
+    removeLinkedPerson(removed.role, removed.username);
     return true;
   }
   await db.delete(schema.users).where(eq(schema.users.id, userId));

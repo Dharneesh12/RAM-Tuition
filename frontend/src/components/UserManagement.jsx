@@ -41,6 +41,9 @@ function UserModal({ user, onSave, onClose }) {
     username: user?.username || '',
     password: '',
     role: user?.role || 'student',
+    grade: 'Class 10',
+    board: 'State Board',
+    designation: '',
   });
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState('');
@@ -55,6 +58,9 @@ function UserModal({ user, onSave, onClose }) {
     try {
       const body = { name: form.name, username: form.username, role: form.role };
       if (form.password) body.password = form.password;
+      // Extra directory fields sent on create so the linked student/staff record is built too
+      if (!isEdit && form.role === 'student') { body.grade = form.grade; body.board = form.board; }
+      if (!isEdit && form.role === 'staff') { body.designation = form.designation || 'Teacher'; }
       const url = isEdit ? `/api/users/${user.id}` : '/api/users';
       const method = isEdit ? 'PUT' : 'POST';
       const res = await apiFetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
@@ -114,6 +120,36 @@ function UserModal({ user, onSave, onClose }) {
             ))}
           </div>
         </div>
+
+        {/* Role-specific directory fields — only when creating a new account */}
+        {!isEdit && form.role === 'student' && (
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 16px' }}>
+            <div className="field">
+              <label>Class / Grade</label>
+              <select className="inp" value={form.grade} onChange={e => upd('grade', e.target.value)}>
+                {['Class 9', 'Class 10', 'Class 11', 'Class 12'].map(g => <option key={g}>{g}</option>)}
+              </select>
+            </div>
+            <div className="field">
+              <label>Board</label>
+              <select className="inp" value={form.board} onChange={e => upd('board', e.target.value)}>
+                <option value="State Board">State Board</option>
+                <option value="CBSE">CBSE</option>
+              </select>
+            </div>
+          </div>
+        )}
+        {!isEdit && form.role === 'staff' && (
+          <div className="field">
+            <label>Designation</label>
+            <input className="inp" placeholder="e.g. Mathematics Teacher" value={form.designation} onChange={e => upd('designation', e.target.value)} />
+          </div>
+        )}
+        {!isEdit && (form.role === 'student' || form.role === 'staff') && (
+          <div style={{ fontSize: '.78rem', color: 'var(--muted)', marginBottom: 12 }}>
+            A {form.role} directory record will also be created and can be completed in the {form.role === 'student' ? 'Students' : 'Staff'} page.
+          </div>
+        )}
 
         <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
           <button className="btn btn-gh" style={{ flex: 1 }} onClick={onClose}>Cancel</button>
