@@ -175,13 +175,13 @@ app.post('/api/students/promote', async (req, res) => {
 });
 
 app.post('/api/students', async (req, res) => {
-  const { name, grade, board, school, email, fatherName, fatherWhatsapp, motherName, motherWhatsapp, subjects, photoUrl, status, password } = req.body;
+  const { name, grade, board, school, email, fatherName, fatherWhatsapp, motherName, motherWhatsapp, subjects, photoUrl, status, password, annualFee } = req.body;
   if (!name || !grade || !school || !email || !fatherName || !fatherWhatsapp || !motherName || !motherWhatsapp || !subjects) {
     return res.status(400).json({ error: 'Missing required admission fields' });
   }
   try {
     const student = await services.createStudent({
-      name, grade, board: board || 'State Board', school, email, fatherName, fatherWhatsapp, motherName, motherWhatsapp, subjects, photoUrl, status: status || 'active', password
+      name, grade, board: board || 'State Board', school, email, fatherName, fatherWhatsapp, motherName, motherWhatsapp, subjects, photoUrl, status: status || 'active', password, annualFee
     });
     res.status(201).json(student);
   } catch (error) {

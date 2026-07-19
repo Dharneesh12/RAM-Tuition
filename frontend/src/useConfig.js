@@ -7,6 +7,7 @@ import { apiFetch } from './api.js';
 const FALLBACK = {
   classes: ['Class 9', 'Class 10', 'Class 11', 'Class 12'],
   subjects: ['Mathematics', 'Science', 'English'],
+  months: ['June', 'July', 'August', 'September', 'October', 'November', 'December', 'January', 'February', 'March', 'April', 'May'],
 };
 
 export function useConfig() {
@@ -21,6 +22,7 @@ export function useConfig() {
         setConfig({
           classes: data.classes?.length ? data.classes : FALLBACK.classes,
           subjects: data.subjects?.length ? data.subjects : FALLBACK.subjects,
+          months: data.months?.length ? data.months : FALLBACK.months,
         });
       })
       .catch(() => {});

@@ -127,6 +127,17 @@ const loadDb = () => {
 };
 loadDb();
 
+// Academic year months (June → May) used to split annual fees into installments.
+const MONTHS = ['June', 'July', 'August', 'September', 'October', 'November', 'December', 'January', 'February', 'March', 'April', 'May'];
+
+// Create one pending fee record per month for a student (the annual-fee split).
+const createMonthlyFees = (studentId, perMonth) => {
+  let feeId = mockDb.fees.length ? Math.max(...mockDb.fees.map(f => f.id)) + 1 : 1;
+  MONTHS.forEach((month) => {
+    mockDb.fees.push({ id: feeId++, studentId, month, amount: perMonth, advance: 0, status: 'pending' });
+  });
+};
+
 // -------------------------------------------------------------
 // ACCOUNT LINKING HELPERS
 // Keep login accounts (users) in sync with student/staff records so that
@@ -178,8 +189,7 @@ const ensureLinkedPerson = (role, { name, username, extra = {} }) => {
       photoUrl: null, status: 'active',
     });
     const classFees = { 'Class 9': 1800, 'Class 10': 2000, 'Class 11': 2200, 'Class 12': 2500 };
-    const feeId = mockDb.fees.length ? Math.max(...mockDb.fees.map(f => f.id)) + 1 : 1;
-    mockDb.fees.push({ id: feeId, studentId: id, month: 'July', amount: classFees[grade] || 2000, advance: 0, status: 'pending' });
+    createMonthlyFees(id, classFees[grade] || 2000);
   }
   if (role === 'staff' && !mockDb.staff.some(s => s.email === username)) {
     const id = mockDb.staff.length ? Math.max(...mockDb.staff.map(s => s.id)) + 1 : 1;
@@ -343,22 +353,18 @@ export const getStudents = async () => {
 };
 
 export const createStudent = async (studentData) => {
-  const { password, ...rest } = studentData; // password is for the login, not the student record
+  const { password, annualFee, ...rest } = studentData; // password → login; annualFee → fee split
   if (isMock) {
     const nextId = mockDb.students.length > 0 ? Math.max(...mockDb.students.map(s => s.id)) + 1 : 1;
     const rollNo = `R-${1042 + mockDb.students.length}`;
     const newStudent = { id: nextId, rollNo, ...rest, status: rest.status || 'active' };
     mockDb.students.push(newStudent);
-    const classFees = { 'Class 9': 1800, 'Class 10': 2000, 'Class 11': 2200, 'Class 12': 2500 };
-    const amount = classFees[studentData.grade] || 2000;
-    mockDb.fees.push({
-      id: mockDb.fees.length + 1,
-      studentId: nextId,
-      month: 'July',
-      amount,
-      advance: 0,
-      status: 'pending'
-    });
+    // Split the annual fee across the 12 academic months (fall back to a
+    // per-class monthly rate × 12 if no annual fee was entered).
+    const classMonthly = { 'Class 9': 1800, 'Class 10': 2000, 'Class 11': 2200, 'Class 12': 2500 };
+    const annual = Number(annualFee) > 0 ? Number(annualFee) : (classMonthly[studentData.grade] || 2000) * 12;
+    const perMonth = Math.round(annual / MONTHS.length);
+    createMonthlyFees(nextId, perMonth);
     // Auto-provision a login account for admitted (non-draft) students.
     if (newStudent.status !== 'draft') {
       ensureLinkedUser({ name: newStudent.name, username: newStudent.email, role: 'student', password });
@@ -660,6 +666,7 @@ export const deleteWorkDone = async (entryId) => {
 export const getConfig = async () => ({
   classes: [...mockDb.config.classes],
   subjects: [...mockDb.config.subjects],
+  months: [...MONTHS],
 });
 
 const addToConfig = (key, value) => {

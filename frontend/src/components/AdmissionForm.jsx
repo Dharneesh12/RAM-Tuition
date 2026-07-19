@@ -16,6 +16,7 @@ export default function AdmissionForm({ onAdmissionComplete }) {
   const [motherWhatsapp, setMotherWhatsapp] = useState('+91 98765 12345');
   const [subjects, setSubjects] = useState(['Mathematics', 'Science']);
   const [loginPassword, setLoginPassword] = useState('password');
+  const [annualFee, setAnnualFee] = useState(24000);
   const [photo, setPhoto] = useState(null);
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
@@ -45,7 +46,8 @@ export default function AdmissionForm({ onAdmissionComplete }) {
       subjects,
       photoUrl: photo ? photo.name : null,
       status, // 'active' or 'draft'
-      password: loginPassword || 'password'
+      password: loginPassword || 'password',
+      annualFee: Number(annualFee) || 0
     };
 
     try {
@@ -170,6 +172,22 @@ export default function AdmissionForm({ onAdmissionComplete }) {
                 placeholder="Set a login password"
               />
               <small style={{ color: 'var(--muted)', fontSize: '.72rem' }}>The student uses this to log into their portal</small>
+            </div>
+            <div className="field">
+              <label>
+                Annual Fee (₹) <span className="req">*</span>
+              </label>
+              <input
+                type="number"
+                className="inp"
+                min="0"
+                value={annualFee}
+                onChange={(e) => setAnnualFee(e.target.value)}
+                placeholder="e.g. 24000"
+              />
+              <small style={{ color: 'var(--muted)', fontSize: '.72rem' }}>
+                Split into 12 monthly installments of <b>₹{(Math.round((Number(annualFee) || 0) / 12)).toLocaleString('en-IN')}</b>/month
+              </small>
             </div>
             <div className="field">
               <label>

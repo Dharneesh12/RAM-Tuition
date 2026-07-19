@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { apiFetch } from '../api.js';
+import { useConfig } from '../useConfig.js';
 
 export default function FeeManagement() {
+  const { months } = useConfig();
   const [selectedMonth, setSelectedMonth] = useState('July');
   const [selectedTab, setSelectedTab] = useState('All'); // 'All', 'Paid', 'Pending'
   const [students, setStudents] = useState([]);
@@ -160,9 +162,18 @@ export default function FeeManagement() {
 
       {/* Data Table Panel */}
       <div className="panel">
-        <div className="panel-h">
-          <h4>Student Fee Status</h4>
-          <div className="seg">
+        <div className="panel-h" style={{ flexWrap: 'wrap', gap: 12 }}>
+          <h4>Student Fee Status · {selectedMonth}</h4>
+          <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+            <select
+              className="inp"
+              style={{ width: 'auto', padding: '8px 12px' }}
+              value={selectedMonth}
+              onChange={(e) => setSelectedMonth(e.target.value)}
+            >
+              {months.map((m) => <option key={m} value={m}>{m}</option>)}
+            </select>
+            <div className="seg">
             <span className={selectedTab === 'All' ? 'on' : ''} onClick={() => setSelectedTab('All')}>
               All
             </span>
@@ -172,6 +183,7 @@ export default function FeeManagement() {
             <span className={selectedTab === 'Pending' ? 'on' : ''} onClick={() => setSelectedTab('Pending')}>
               Pending
             </span>
+            </div>
           </div>
         </div>
 

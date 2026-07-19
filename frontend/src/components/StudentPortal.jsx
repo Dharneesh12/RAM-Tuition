@@ -332,6 +332,34 @@ export default function StudentPortal({ user, activeTab = 'dashboard' }) {
           <b style={{ color: feePaid ? 'var(--green)' : 'var(--gold)' }}>{feeStatusLabel.toUpperCase()}</b>
         </div>
       </div>
+
+      {/* Monthly installment schedule (annual fee split across the year) */}
+      {allFees.length > 0 && (
+        <div style={{ marginTop: 18 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+            <b style={{ fontFamily: 'var(--disp)', fontSize: '1rem' }}>Monthly Fee Schedule</b>
+            <span style={{ fontSize: '.82rem', color: 'var(--muted)' }}>
+              Annual: <b style={{ color: 'var(--ink)' }}>{inr(allFees.reduce((a, f) => a + (f.amount || 0), 0))}</b>
+            </span>
+          </div>
+          <table className="tbl">
+            <thead><tr><th>Month</th><th>Installment</th><th style={{ textAlign: 'right' }}>Status</th></tr></thead>
+            <tbody>
+              {allFees.map((f) => (
+                <tr key={f.id}>
+                  <td><b>{f.month}</b></td>
+                  <td>{inr(f.amount)}</td>
+                  <td style={{ textAlign: 'right' }}>
+                    <span className={`pill ${f.status === 'paid' ? 'p-paid' : 'p-pend'}`}>
+                      {f.status === 'paid' ? 'Paid' : 'Pending'}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 
