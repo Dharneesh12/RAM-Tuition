@@ -85,7 +85,12 @@ const mockDb = {
     { id: 2, date: '2026-07-07', classSubject: 'Class 12 · Maths', topic: 'Integration — Definite Integrals', staffName: 'Suganya K', remarks: 'Revision on Sunday' },
     { id: 3, date: '2026-07-06', classSubject: 'Class 10 · Science', topic: 'Chemical Reactions & Equations', staffName: 'Mohan R', remarks: 'Lab demo done' },
     { id: 4, date: '2026-07-05', classSubject: 'Class 12 · Maths', topic: 'Matrices — Determinants', staffName: 'Suganya K', remarks: '—' }
-  ]
+  ],
+  // Admin-configurable classes & subjects — drive every dropdown across the app.
+  config: {
+    classes: ['Class 9', 'Class 10', 'Class 11', 'Class 12'],
+    subjects: ['Mathematics', 'Physics', 'Chemistry', 'Biology', 'Science', 'English', 'Social Science']
+  }
 };
 
 // -------------------------------------------------------------
@@ -613,3 +618,34 @@ export const deleteWorkDone = async (entryId) => {
   await db.delete(schema.workDone).where(eq(schema.workDone.id, entryId));
   return true;
 };
+
+// -------------------------------------------------------------
+// CONFIG SERVICES (admin-managed classes & subjects)
+// Stored in-memory so it works in both mock and PG modes.
+// -------------------------------------------------------------
+export const getConfig = async () => ({
+  classes: [...mockDb.config.classes],
+  subjects: [...mockDb.config.subjects],
+});
+
+const addToConfig = (key, value) => {
+  const name = (value || '').trim();
+  if (!name) return { error: 'Name is required' };
+  const list = mockDb.config[key];
+  if (list.some(x => x.toLowerCase() === name.toLowerCase())) return { error: 'Already exists' };
+  list.push(name);
+  return { ok: true, list: [...list] };
+};
+
+const removeFromConfig = (key, value) => {
+  const list = mockDb.config[key];
+  const idx = list.findIndex(x => x.toLowerCase() === (value || '').toLowerCase());
+  if (idx === -1) return { error: 'Not found' };
+  list.splice(idx, 1);
+  return { ok: true, list: [...list] };
+};
+
+export const addClass = async (name) => addToConfig('classes', name);
+export const removeClass = async (name) => removeFromConfig('classes', name);
+export const addSubject = async (name) => addToConfig('subjects', name);
+export const removeSubject = async (name) => removeFromConfig('subjects', name);

@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { apiFetch } from '../api.js';
+import { useConfig } from '../useConfig.js';
 
 export default function AdmissionForm({ onAdmissionComplete }) {
+  const { classes, subjects: allSubjects } = useConfig();
   const [step, setStep] = useState(1);
   const [name, setName] = useState('Meena Lakshmi');
   const [grade, setGrade] = useState('Class 10');
@@ -119,10 +121,7 @@ export default function AdmissionForm({ onAdmissionComplete }) {
                 Grade / Class <span className="req">*</span>
               </label>
               <select className="inp" value={grade} onChange={(e) => setGrade(e.target.value)}>
-                <option value="Class 9">Class 9</option>
-                <option value="Class 10">Class 10</option>
-                <option value="Class 11">Class 11</option>
-                <option value="Class 12">Class 12</option>
+                {classes.map((c) => <option key={c} value={c}>{c}</option>)}
               </select>
             </div>
             <div className="field">
@@ -228,50 +227,16 @@ export default function AdmissionForm({ onAdmissionComplete }) {
               <span style={{ color: 'var(--muted)', fontWeight: 500 }}>(based on {grade})</span>
             </label>
             <div className="chipset" style={{ padding: '8px 0' }}>
-              <span
-                className="subj"
-                style={
-                  subjects.includes('Mathematics')
-                    ? { background: 'var(--blue)', color: '#fff' }
-                    : { opacity: 0.6 }
-                }
-                onClick={() => toggleSubject('Mathematics')}
-              >
-                {subjects.includes('Mathematics') ? '✓' : '+'} Mathematics
-              </span>
-              <span
-                className="subj"
-                style={
-                  subjects.includes('Science')
-                    ? { background: 'var(--mint)', color: '#fff' }
-                    : { opacity: 0.6 }
-                }
-                onClick={() => toggleSubject('Science')}
-              >
-                {subjects.includes('Science') ? '✓' : '+'} Science
-              </span>
-              <span
-                className="subj"
-                style={
-                  subjects.includes('English')
-                    ? { background: 'var(--indigo)', color: '#fff' }
-                    : { opacity: 0.6 }
-                }
-                onClick={() => toggleSubject('English')}
-              >
-                {subjects.includes('English') ? '✓' : '+'} English
-              </span>
-              <span
-                className="subj"
-                style={
-                  subjects.includes('Social Science')
-                    ? { background: 'var(--gold)', color: '#fff' }
-                    : { opacity: 0.6 }
-                }
-                onClick={() => toggleSubject('Social Science')}
-              >
-                {subjects.includes('Social Science') ? '✓' : '+'} Social Science
-              </span>
+              {allSubjects.map((sub) => (
+                <span
+                  key={sub}
+                  className="subj"
+                  style={subjects.includes(sub) ? { background: 'var(--blue)', color: '#fff' } : { opacity: 0.6 }}
+                  onClick={() => toggleSubject(sub)}
+                >
+                  {subjects.includes(sub) ? '✓' : '+'} {sub}
+                </span>
+              ))}
             </div>
           </div>
 

@@ -1,7 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { apiFetch } from '../api.js';
+import { useConfig } from '../useConfig.js';
 
-const CLASS_OPTIONS = ['Class 9 · Science', 'Class 10 · Maths', 'Class 10 · Science', 'Class 11 · Maths', 'Class 12 · Maths'];
+// Build "Class · Subject" combos from the admin-configured classes & subjects.
+const buildClassSubjects = (classes, subjects) =>
+  classes.flatMap((c) => subjects.map((s) => `${c} · ${s}`));
 
 function Toast({ msg, type, onClose }) {
   useEffect(() => { const t = setTimeout(onClose, 3500); return () => clearTimeout(t); }, [onClose]);
@@ -27,9 +30,11 @@ function DeleteModal({ item, onConfirm, onCancel }) {
 }
 
 function EntryModal({ entry, onSave, onClose }) {
+  const { classes, subjects } = useConfig();
+  const CLASS_OPTIONS = buildClassSubjects(classes, subjects);
   const [form, setForm] = useState({
     date: entry.date || '',
-    classSubject: entry.classSubject || CLASS_OPTIONS[1],
+    classSubject: entry.classSubject || CLASS_OPTIONS[0] || 'Class 10 · Mathematics',
     topic: entry.topic || '',
     staffName: entry.staffName || '',
     remarks: entry.remarks || '',
@@ -95,10 +100,12 @@ function EntryModal({ entry, onSave, onClose }) {
 }
 
 export default function WorkDoneLog({ user }) {
+  const { classes, subjects } = useConfig();
+  const CLASS_OPTIONS = buildClassSubjects(classes, subjects);
   const [entries, setEntries] = useState([]);
   const [selectedTab, setSelectedTab] = useState('All');
   const [showAddForm, setShowAddForm] = useState(false);
-  const [classSubject, setClassSubject] = useState('Class 10 · Maths');
+  const [classSubject, setClassSubject] = useState(CLASS_OPTIONS[0] || 'Class 10 · Mathematics');
   const [topic, setTopic] = useState('');
   const [remarks, setRemarks] = useState('');
   const [staffName, setStaffName] = useState(user ? user.name : 'Suganya K');

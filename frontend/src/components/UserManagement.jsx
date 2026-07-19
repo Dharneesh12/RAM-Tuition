@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { apiFetch } from '../api.js';
+import { useConfig } from '../useConfig.js';
 
 /* ── tiny reusable toast ── */
 function Toast({ msg, type, onClose }) {
@@ -35,6 +36,7 @@ function DeleteModal({ item, onConfirm, onCancel }) {
 
 /* ── User form modal ── */
 function UserModal({ user, onSave, onClose }) {
+  const { classes } = useConfig();
   const isEdit = Boolean(user?.id);
   const [form, setForm] = useState({
     name: user?.name || '',
@@ -127,7 +129,7 @@ function UserModal({ user, onSave, onClose }) {
             <div className="field">
               <label>Class / Grade</label>
               <select className="inp" value={form.grade} onChange={e => upd('grade', e.target.value)}>
-                {['Class 9', 'Class 10', 'Class 11', 'Class 12'].map(g => <option key={g}>{g}</option>)}
+                {classes.map(g => <option key={g}>{g}</option>)}
               </select>
             </div>
             <div className="field">

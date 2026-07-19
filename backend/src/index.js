@@ -415,6 +415,51 @@ app.delete('/api/workdone/:id', async (req, res) => {
 });
 
 // -------------------------------------------------------------
+// CONFIG ROUTES (admin-managed classes & subjects)
+// -------------------------------------------------------------
+app.get('/api/config', async (req, res) => {
+  try {
+    res.json(await services.getConfig());
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+const configHandler = (fn) => async (req, res) => {
+  const { name } = req.body;
+  try {
+    const result = await fn(name);
+    if (result.error) return res.status(400).json({ error: result.error });
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+app.post('/api/config/classes', configHandler(services.addClass));
+app.post('/api/config/subjects', configHandler(services.addSubject));
+
+app.delete('/api/config/classes/:name', async (req, res) => {
+  try {
+    const result = await services.removeClass(decodeURIComponent(req.params.name));
+    if (result.error) return res.status(404).json({ error: result.error });
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.delete('/api/config/subjects/:name', async (req, res) => {
+  try {
+    const result = await services.removeSubject(decodeURIComponent(req.params.name));
+    if (result.error) return res.status(404).json({ error: result.error });
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// -------------------------------------------------------------
 // DASHBOARD METRICS ROUTE
 // -------------------------------------------------------------
 app.get('/api/dashboard', async (req, res) => {

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { apiFetch } from '../api.js';
+import { useConfig } from '../useConfig.js';
 
 function Toast({ msg, type, onClose }) {
   useEffect(() => { const t = setTimeout(onClose, 3500); return () => clearTimeout(t); }, [onClose]);
@@ -25,7 +26,7 @@ function DeleteModal({ student, onConfirm, onCancel }) {
 }
 
 function EditStudentModal({ student, onSave, onClose }) {
-  const SUBJECTS = ['Mathematics', 'Physics', 'Chemistry', 'Biology', 'Science', 'English', 'History', 'Civics', 'Geography'];
+  const { classes, subjects: SUBJECTS } = useConfig();
   const [form, setForm] = useState({
     name: student.name || '',
     grade: student.grade || 'Class 10',
@@ -80,7 +81,7 @@ function EditStudentModal({ student, onSave, onClose }) {
           <div className="field">
             <label>Class / Grade</label>
             <select className="inp" value={form.grade} onChange={e => upd('grade', e.target.value)}>
-              {['Class 9', 'Class 10', 'Class 11', 'Class 12'].map(g => <option key={g}>{g}</option>)}
+              {classes.map(g => <option key={g}>{g}</option>)}
             </select>
           </div>
           <div className="field">

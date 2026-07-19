@@ -13,6 +13,7 @@ import WorkDoneLog from './components/WorkDoneLog.jsx';
 import ReportsOverview from './components/ReportsOverview.jsx';
 import StudentPortal from './components/StudentPortal.jsx';
 import UserManagement from './components/UserManagement.jsx';
+import ClassSubjectSettings from './components/ClassSubjectSettings.jsx';
 
 export default function App() {
   const [user, setUser] = useState(null); // { id, name, username, role }
@@ -79,6 +80,9 @@ export default function App() {
       case 'users':
         // Account management is director-only
         return user.role === 'director' ? <UserManagement /> : <DirectorDashboard setActiveTab={setActiveTab} />;
+      case 'settings':
+        // Classes & Subjects config is director-only
+        return user.role === 'director' ? <ClassSubjectSettings /> : <DirectorDashboard setActiveTab={setActiveTab} />;
       default:
         return <DirectorDashboard setActiveTab={setActiveTab} user={user} />;
     }

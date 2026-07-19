@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { apiFetch } from '../api.js';
+import { useConfig } from '../useConfig.js';
 
 export default function MarksEntry() {
+  const { classes, subjects } = useConfig();
   const [selectedClass, setSelectedClass] = useState('Class 10');
   const [subject, setSubject] = useState('Maths');
   const [testName, setTestName] = useState('Unit Test 2 — Trigonometry');
@@ -123,7 +125,7 @@ export default function MarksEntry() {
   return (
     <div>
       <div className="panel" style={{ marginBottom: '18px' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: '22px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr', gap: '18px' }}>
           <div className="field" style={{ margin: 0 }}>
             <label>
               Test Name <span className="req">*</span>{' '}
@@ -142,19 +144,15 @@ export default function MarksEntry() {
             </datalist>
           </div>
           <div className="field" style={{ margin: 0 }}>
-            <label>Class / Subject</label>
-            <select
-              className="inp"
-              value={selectedClass}
-              onChange={(e) => {
-                setSelectedClass(e.target.value);
-                setSubject(e.target.value.includes('Science') ? 'Science' : 'Maths');
-              }}
-            >
-              <option value="Class 9">Class 9 · Science</option>
-              <option value="Class 10">Class 10 · Maths</option>
-              <option value="Class 11">Class 11 · Maths</option>
-              <option value="Class 12">Class 12 · Maths</option>
+            <label>Class</label>
+            <select className="inp" value={selectedClass} onChange={(e) => setSelectedClass(e.target.value)}>
+              {classes.map((c) => <option key={c} value={c}>{c}</option>)}
+            </select>
+          </div>
+          <div className="field" style={{ margin: 0 }}>
+            <label>Subject</label>
+            <select className="inp" value={subject} onChange={(e) => setSubject(e.target.value)}>
+              {subjects.map((s) => <option key={s} value={s}>{s}</option>)}
             </select>
           </div>
           <div className="field" style={{ margin: 0 }}>

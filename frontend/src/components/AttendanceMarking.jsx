@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { apiFetch } from '../api.js';
+import { useConfig } from '../useConfig.js';
 
 export default function AttendanceMarking() {
+  const { classes } = useConfig();
   const [selectedClass, setSelectedClass] = useState('Class 10');
   const [selectedDate, setSelectedDate] = useState('2026-07-08');
   const [students, setStudents] = useState([]);
@@ -97,10 +99,7 @@ export default function AttendanceMarking() {
           value={selectedClass}
           onChange={(e) => setSelectedClass(e.target.value)}
         >
-          <option value="Class 9">Class 9 · Maths/Science</option>
-          <option value="Class 10">Class 10 · Mathematics</option>
-          <option value="Class 11">Class 11 · Mathematics</option>
-          <option value="Class 12">Class 12 · Mathematics</option>
+          {classes.map((c) => <option key={c} value={c}>{c}</option>)}
         </select>
 
         <select className="inp" style={{ width: '150px' }}>
