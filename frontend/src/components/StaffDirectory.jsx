@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { apiFetch } from '../api.js';
+import { useConfig } from '../useConfig.js';
 
 function Toast({ msg, type, onClose }) {
   useEffect(() => { const t = setTimeout(onClose, 3500); return () => clearTimeout(t); }, [onClose]);
@@ -25,14 +26,15 @@ function DeleteModal({ item, onConfirm, onCancel }) {
 }
 
 function StaffModal({ staff, onSave, onClose }) {
+  const { classes: allClasses, subjects: allSubjects } = useConfig();
   const isEdit = Boolean(staff?.id);
   const [form, setForm] = useState({
     name: staff?.name || '',
     email: staff?.email || '',
     phone: staff?.phone || '',
     role: staff?.role || '',
-    subjects: staff?.subjects?.join(', ') || '',
-    classes: staff?.classes?.join(', ') || '',
+    subjects: staff?.subjects || [],
+    classes: staff?.classes || [],
     joined: staff?.joined || new Date().toISOString().split('T')[0],
     status: staff?.status || 'active',
     password: 'password',
@@ -41,6 +43,10 @@ function StaffModal({ staff, onSave, onClose }) {
   const [err, setErr] = useState('');
 
   const upd = (k, v) => setForm(f => ({ ...f, [k]: v }));
+  const toggleIn = (k, v) => setForm(f => ({
+    ...f,
+    [k]: f[k].includes(v) ? f[k].filter(x => x !== v) : [...f[k], v],
+  }));
 
   const handleSave = async () => {
     if (!form.name.trim() || !form.email.trim() || !form.role.trim()) {
@@ -50,11 +56,7 @@ function StaffModal({ staff, onSave, onClose }) {
     setSaving(true);
     setErr('');
     try {
-      const body = {
-        ...form,
-        subjects: form.subjects.split(',').map(s => s.trim()).filter(Boolean),
-        classes: form.classes.split(',').map(c => c.trim()).filter(Boolean),
-      };
+      const body = { ...form }; // subjects & classes are already arrays
       if (isEdit) delete body.password; // password only applies when creating the login
       const url = isEdit ? `/api/staff/${staff.id}` : '/api/staff';
       const method = isEdit ? 'PUT' : 'POST';
@@ -91,13 +93,31 @@ function StaffModal({ staff, onSave, onClose }) {
             <label>Role / Designation <span className="req">*</span></label>
             <input className="inp" placeholder="e.g. Mathematics Teacher" value={form.role} onChange={e => upd('role', e.target.value)} />
           </div>
-          <div className="field">
-            <label>Subjects (comma-separated)</label>
-            <input className="inp" placeholder="Mathematics, Physics" value={form.subjects} onChange={e => upd('subjects', e.target.value)} />
+          <div className="field" style={{ gridColumn: 'span 2' }}>
+            <label>Subjects Taught <span style={{ color: 'var(--muted)', fontWeight: 500 }}>(tap to assign)</span></label>
+            <div className="chipset" style={{ marginTop: 4 }}>
+              {allSubjects.map(sub => (
+                <span key={sub} className="subj"
+                  style={form.subjects.includes(sub) ? { background: 'var(--mint)', color: '#fff' } : { opacity: 0.6 }}
+                  onClick={() => toggleIn('subjects', sub)}>
+                  {form.subjects.includes(sub) ? '✓ ' : '+ '}{sub}
+                </span>
+              ))}
+              {allSubjects.length === 0 && <small style={{ color: 'var(--muted)' }}>No subjects configured yet.</small>}
+            </div>
           </div>
-          <div className="field">
-            <label>Classes (comma-separated)</label>
-            <input className="inp" placeholder="Class 10, Class 12" value={form.classes} onChange={e => upd('classes', e.target.value)} />
+          <div className="field" style={{ gridColumn: 'span 2' }}>
+            <label>Assigned Classes <span style={{ color: 'var(--muted)', fontWeight: 500 }}>(tap to assign)</span></label>
+            <div className="chipset" style={{ marginTop: 4 }}>
+              {allClasses.map(cls => (
+                <span key={cls} className="subj"
+                  style={form.classes.includes(cls) ? { background: 'var(--blue)', color: '#fff' } : { opacity: 0.6 }}
+                  onClick={() => toggleIn('classes', cls)}>
+                  {form.classes.includes(cls) ? '✓ ' : '+ '}{cls}
+                </span>
+              ))}
+              {allClasses.length === 0 && <small style={{ color: 'var(--muted)' }}>No classes configured yet.</small>}
+            </div>
           </div>
           <div className="field">
             <label>Date Joined</label>
