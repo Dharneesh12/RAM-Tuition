@@ -1,6 +1,13 @@
 import { db, isMock } from './index.js';
 import * as schema from './schema.js';
 import { eq, and } from 'drizzle-orm';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+// Durable JSON store — acts as the database in mock mode so every entered
+// record survives backend restarts (data written to backend/src/db/data.json).
+const DATA_FILE = path.join(path.dirname(fileURLToPath(import.meta.url)), 'data.json');
 
 // In-Memory Database for Mock Fallback
 const mockDb = {
@@ -92,6 +99,33 @@ const mockDb = {
     subjects: ['Mathematics', 'Physics', 'Chemistry', 'Biology', 'Science', 'English', 'Social Science']
   }
 };
+
+// Write the whole store to disk. Called after every create/update/delete so
+// nothing entered is ever lost on restart.
+export const persist = () => {
+  try {
+    fs.writeFileSync(DATA_FILE, JSON.stringify(mockDb, null, 2));
+  } catch (e) {
+    console.warn(`⚠️ Failed to persist data: ${e.message}`);
+  }
+};
+
+// Load previously-saved data on startup (or seed the file on first run).
+const loadDb = () => {
+  try {
+    if (fs.existsSync(DATA_FILE)) {
+      const saved = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
+      Object.keys(saved).forEach((key) => { mockDb[key] = saved[key]; });
+      console.log('📂 Loaded persisted data from data.json');
+    } else {
+      persist(); // first run — write the seed so the file exists
+      console.log('🌱 Seeded data.json with initial data');
+    }
+  } catch (e) {
+    console.warn(`⚠️ Failed to load persisted data: ${e.message}`);
+  }
+};
+loadDb();
 
 // -------------------------------------------------------------
 // ACCOUNT LINKING HELPERS

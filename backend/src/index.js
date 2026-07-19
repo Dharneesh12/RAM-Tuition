@@ -12,6 +12,17 @@ const PORT = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
 
+// Persist the data store to disk after every successful write (POST/PUT/DELETE)
+// so all entered data is durable across restarts.
+app.use((req, res, next) => {
+  if (req.method !== 'GET' && req.method !== 'HEAD') {
+    res.on('finish', () => {
+      if (res.statusCode >= 200 && res.statusCode < 400) services.persist();
+    });
+  }
+  next();
+});
+
 // Log DB Mode
 console.log(`ℹ️ Backend started in ${isMock ? 'MOCK IN-MEMORY' : 'POSTGRESQL'} database mode.`);
 
