@@ -35,6 +35,7 @@ function StaffModal({ staff, onSave, onClose }) {
     classes: staff?.classes?.join(', ') || '',
     joined: staff?.joined || new Date().toISOString().split('T')[0],
     status: staff?.status || 'active',
+    password: 'password',
   });
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState('');
@@ -54,6 +55,7 @@ function StaffModal({ staff, onSave, onClose }) {
         subjects: form.subjects.split(',').map(s => s.trim()).filter(Boolean),
         classes: form.classes.split(',').map(c => c.trim()).filter(Boolean),
       };
+      if (isEdit) delete body.password; // password only applies when creating the login
       const url = isEdit ? `/api/staff/${staff.id}` : '/api/staff';
       const method = isEdit ? 'PUT' : 'POST';
       const res = await apiFetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
@@ -108,6 +110,12 @@ function StaffModal({ staff, onSave, onClose }) {
               <option value="inactive">Inactive</option>
             </select>
           </div>
+          {!isEdit && (
+            <div className="field">
+              <label>Portal Login Password</label>
+              <input className="inp" value={form.password} onChange={e => upd('password', e.target.value)} placeholder="Set a login password" />
+            </div>
+          )}
         </div>
         <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
           <button className="btn btn-gh" style={{ flex: 1 }} onClick={onClose}>Cancel</button>

@@ -183,6 +183,17 @@ export default function StudentsList({ setActiveTab }) {
     setModal(null);
   };
 
+  const handlePromote = async () => {
+    try {
+      const res = await apiFetch('/api/students/promote', { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Promotion failed');
+      await fetchStudents();
+      showToast(`Promoted ${data.promoted} student${data.promoted === 1 ? '' : 's'} · ${data.graduated} graduated (Class 12)`);
+    } catch (e) { showToast(e.message, 'error'); }
+    setModal(null);
+  };
+
   const filteredStudents = students.filter(s =>
     s.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (s.rollNo || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -201,16 +212,37 @@ export default function StudentsList({ setActiveTab }) {
       {toast && <Toast msg={toast.msg} type={toast.type} onClose={() => setToast(null)} />}
       {modal?.type === 'edit' && <EditStudentModal student={modal.student} onSave={handleSave} onClose={() => setModal(null)} />}
       {modal?.type === 'delete' && <DeleteModal student={modal.student} onConfirm={handleDelete} onCancel={() => setModal(null)} />}
+      {modal?.type === 'promote' && (
+        <div className="modal-overlay" onClick={() => setModal(null)}>
+          <div className="modal modal-sm" onClick={e => e.stopPropagation()}>
+            <div className="danger-icon" style={{ background: 'linear-gradient(145deg,var(--blue),var(--blue-d))' }}>🎓</div>
+            <h3 style={{ fontFamily: 'var(--disp)', fontWeight: 800, fontSize: '1.15rem', textAlign: 'center', marginBottom: 8 }}>Promote to Next Class?</h3>
+            <p style={{ color: 'var(--muted)', textAlign: 'center', fontSize: '.88rem', marginBottom: 20 }}>
+              Every student moves up one class (9→10→11→12). <b style={{ color: 'var(--ink)' }}>Class 12 students graduate and are removed</b>. Attendance, marks & work-done history stays with each promoted student.
+            </p>
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button className="btn btn-gh" style={{ flex: 1 }} onClick={() => setModal(null)}>Cancel</button>
+              <button className="btn btn-pri" style={{ flex: 1 }} onClick={handlePromote}>Promote</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="page-header">
         <div>
           <h3>Student Directory</h3>
           <p>List of admitted students and active registration drafts</p>
         </div>
-        <button className="btn btn-pri" onClick={() => setActiveTab('admission')}>
-          <svg className="ic" style={{ width: 18, height: 18 }}><use href="#i-plus" /></svg>
-          Admit Student
-        </button>
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+          <button className="btn btn-gh" onClick={() => setModal({ type: 'promote' })}>
+            <svg className="ic" style={{ width: 18, height: 18 }}><use href="#i-teacher" /></svg>
+            Promote Year
+          </button>
+          <button className="btn btn-pri" onClick={() => setActiveTab('admission')}>
+            <svg className="ic" style={{ width: 18, height: 18 }}><use href="#i-plus" /></svg>
+            Admit Student
+          </button>
+        </div>
       </div>
 
       <div className="panel">

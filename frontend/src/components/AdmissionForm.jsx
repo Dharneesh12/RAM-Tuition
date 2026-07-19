@@ -13,6 +13,7 @@ export default function AdmissionForm({ onAdmissionComplete }) {
   const [motherName, setMotherName] = useState('Lakshmi Devi');
   const [motherWhatsapp, setMotherWhatsapp] = useState('+91 98765 12345');
   const [subjects, setSubjects] = useState(['Mathematics', 'Science']);
+  const [loginPassword, setLoginPassword] = useState('password');
   const [photo, setPhoto] = useState(null);
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
@@ -41,7 +42,8 @@ export default function AdmissionForm({ onAdmissionComplete }) {
       motherWhatsapp,
       subjects,
       photoUrl: photo ? photo.name : null,
-      status // 'active' or 'draft'
+      status, // 'active' or 'draft'
+      password: loginPassword || 'password'
     };
 
     try {
@@ -59,7 +61,7 @@ export default function AdmissionForm({ onAdmissionComplete }) {
       if (status === 'draft') {
         setMessage('Draft saved successfully! You can find it in the admissions log.');
       } else {
-        setMessage(`Student admitted successfully! A student login was created — username: ${email} · password: password`);
+        setMessage(`Student admitted successfully! Portal login created — username: ${email} · password: ${loginPassword || 'password'}`);
         if (onAdmissionComplete) {
           setTimeout(() => {
             onAdmissionComplete(data);
@@ -155,6 +157,20 @@ export default function AdmissionForm({ onAdmissionComplete }) {
                 onChange={(e) => setEmail(e.target.value)}
                 required
               />
+              <small style={{ color: 'var(--muted)', fontSize: '.72rem' }}>Used as the student's portal login username</small>
+            </div>
+            <div className="field">
+              <label>
+                Portal Login Password <span className="req">*</span>
+              </label>
+              <input
+                type="text"
+                className="inp"
+                value={loginPassword}
+                onChange={(e) => setLoginPassword(e.target.value)}
+                placeholder="Set a login password"
+              />
+              <small style={{ color: 'var(--muted)', fontSize: '.72rem' }}>The student uses this to log into their portal</small>
             </div>
             <div className="field">
               <label>

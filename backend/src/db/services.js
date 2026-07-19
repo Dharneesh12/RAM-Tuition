@@ -97,11 +97,11 @@ const mockDb = {
 // -------------------------------------------------------------
 const DEFAULT_PASSWORD = 'password';
 
-const ensureLinkedUser = ({ name, username, role }) => {
+const ensureLinkedUser = ({ name, username, role, password }) => {
   if (!username) return;
   if (mockDb.users.some(u => u.username === username)) return; // already has a login
   const nextId = mockDb.users.length ? Math.max(...mockDb.users.map(u => u.id)) + 1 : 1;
-  mockDb.users.push({ id: nextId, username, password: DEFAULT_PASSWORD, role, name });
+  mockDb.users.push({ id: nextId, username, password: password || DEFAULT_PASSWORD, role, name });
 };
 
 const removeLinkedUser = (username) => {
@@ -267,11 +267,12 @@ export const getStaff = async () => {
 };
 
 export const createStaff = async (staffData) => {
+  const { password, ...rest } = staffData; // password is for the login, not the staff record
   const nextId = mockDb.staff.length > 0 ? Math.max(...mockDb.staff.map(s => s.id)) + 1 : 1;
-  const newStaff = { id: nextId, ...staffData, status: staffData.status || 'active' };
+  const newStaff = { id: nextId, ...rest, status: rest.status || 'active' };
   mockDb.staff.push(newStaff);
-  // Auto-provision a staff login account.
-  ensureLinkedUser({ name: newStaff.name, username: newStaff.email, role: 'staff' });
+  // Auto-provision a staff login account with the chosen password.
+  ensureLinkedUser({ name: newStaff.name, username: newStaff.email, role: 'staff', password });
   return newStaff;
 };
 
@@ -303,10 +304,11 @@ export const getStudents = async () => {
 };
 
 export const createStudent = async (studentData) => {
+  const { password, ...rest } = studentData; // password is for the login, not the student record
   if (isMock) {
     const nextId = mockDb.students.length > 0 ? Math.max(...mockDb.students.map(s => s.id)) + 1 : 1;
     const rollNo = `R-${1042 + mockDb.students.length}`;
-    const newStudent = { id: nextId, rollNo, ...studentData, status: studentData.status || 'active' };
+    const newStudent = { id: nextId, rollNo, ...rest, status: rest.status || 'active' };
     mockDb.students.push(newStudent);
     const classFees = { 'Class 9': 1800, 'Class 10': 2000, 'Class 11': 2200, 'Class 12': 2500 };
     const amount = classFees[studentData.grade] || 2000;
@@ -320,7 +322,7 @@ export const createStudent = async (studentData) => {
     });
     // Auto-provision a login account for admitted (non-draft) students.
     if (newStudent.status !== 'draft') {
-      ensureLinkedUser({ name: newStudent.name, username: newStudent.email, role: 'student' });
+      ensureLinkedUser({ name: newStudent.name, username: newStudent.email, role: 'student', password });
     }
     return newStudent;
   }
@@ -367,6 +369,42 @@ export const deleteStudent = async (studentId) => {
   }
   await db.delete(schema.students).where(eq(schema.students.id, studentId));
   return true;
+};
+
+// Year rollover: promote every student one class up. Class 12 students graduate
+// and are removed (with their logins + records). History for promoted students
+// stays intact because it is keyed by studentId — only the grade changes.
+export const promoteStudents = async () => {
+  const nextGrade = { 'Class 9': 'Class 10', 'Class 10': 'Class 11', 'Class 11': 'Class 12' };
+  if (isMock) {
+    const graduating = mockDb.students.filter(s => s.grade === 'Class 12');
+    // Remove graduating students + their dependents + logins
+    graduating.forEach(g => {
+      mockDb.fees = mockDb.fees.filter(f => f.studentId !== g.id);
+      mockDb.attendance = mockDb.attendance.filter(a => a.studentId !== g.id);
+      mockDb.marks = mockDb.marks.filter(m => m.studentId !== g.id);
+      removeLinkedUser(g.email);
+    });
+    mockDb.students = mockDb.students.filter(s => s.grade !== 'Class 12');
+    // Promote the rest
+    let promoted = 0;
+    mockDb.students.forEach(s => {
+      if (nextGrade[s.grade]) { s.grade = nextGrade[s.grade]; promoted++; }
+    });
+    return { promoted, graduated: graduating.length };
+  }
+  // PG mode
+  const all = await db.select().from(schema.students);
+  const graduating = all.filter(s => s.grade === 'Class 12');
+  for (const g of graduating) await deleteStudent(g.id);
+  let promoted = 0;
+  for (const s of all) {
+    if (nextGrade[s.grade]) {
+      await db.update(schema.students).set({ grade: nextGrade[s.grade] }).where(eq(schema.students.id, s.id));
+      promoted++;
+    }
+  }
+  return { promoted, graduated: graduating.length };
 };
 
 // -------------------------------------------------------------

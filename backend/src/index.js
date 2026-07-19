@@ -102,7 +102,7 @@ app.get('/api/staff', async (req, res) => {
 });
 
 app.post('/api/staff', async (req, res) => {
-  const { name, email, phone, role, classes, subjects, joined, status } = req.body;
+  const { name, email, phone, role, classes, subjects, joined, status, password } = req.body;
   if (!name || !email || !role) {
     return res.status(400).json({ error: 'Missing required fields: name, email, role' });
   }
@@ -111,7 +111,7 @@ app.post('/api/staff', async (req, res) => {
       name, email, phone: phone || '', role,
       classes: classes || [], subjects: subjects || [],
       joined: joined || new Date().toISOString().split('T')[0],
-      status: status || 'active'
+      status: status || 'active', password
     });
     res.status(201).json(newStaff);
   } catch (error) {
@@ -154,14 +154,23 @@ app.get('/api/students', async (req, res) => {
   }
 });
 
+app.post('/api/students/promote', async (req, res) => {
+  try {
+    const result = await services.promoteStudents();
+    res.json({ message: 'Students promoted to the next class', ...result });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 app.post('/api/students', async (req, res) => {
-  const { name, grade, board, school, email, fatherName, fatherWhatsapp, motherName, motherWhatsapp, subjects, photoUrl, status } = req.body;
+  const { name, grade, board, school, email, fatherName, fatherWhatsapp, motherName, motherWhatsapp, subjects, photoUrl, status, password } = req.body;
   if (!name || !grade || !school || !email || !fatherName || !fatherWhatsapp || !motherName || !motherWhatsapp || !subjects) {
     return res.status(400).json({ error: 'Missing required admission fields' });
   }
   try {
     const student = await services.createStudent({
-      name, grade, board: board || 'State Board', school, email, fatherName, fatherWhatsapp, motherName, motherWhatsapp, subjects, photoUrl, status: status || 'active'
+      name, grade, board: board || 'State Board', school, email, fatherName, fatherWhatsapp, motherName, motherWhatsapp, subjects, photoUrl, status: status || 'active', password
     });
     res.status(201).json(student);
   } catch (error) {

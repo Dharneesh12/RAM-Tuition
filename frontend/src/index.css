@@ -578,8 +578,53 @@ select.inp{cursor:pointer;}
 .empty-state .icon{font-size:3rem;margin-bottom:12px;}
 .empty-state p{font-size:.95rem;font-weight:600;}
 
+/* ===== Mobile nav (hamburger + drawer) ===== */
+.tb-burger{
+  display:none;align-items:center;justify-content:center;
+  width:40px;height:40px;border-radius:10px;flex-shrink:0;cursor:pointer;
+  background:var(--sky2);border:1px solid var(--line);color:var(--ink2);
+  transition:all .2s;
+}
+.tb-burger:hover{background:var(--sky);color:var(--blue);}
+.sb-overlay{position:fixed;inset:0;background:rgba(10,15,40,.5);backdrop-filter:blur(2px);z-index:59;animation:fadeIn .2s ease;}
+
+/* ===== Responsive ===== */
 @media(max-width:1100px){
-  .app{grid-template-columns:1fr}.sb{display:none}
+  .app{grid-template-columns:1fr}
+  /* Sidebar → slide-in drawer */
+  .sb, .screen-app .sb{
+    position:fixed;top:0;left:0;bottom:0;height:100vh;width:262px;z-index:60;
+    transform:translateX(-102%);transition:transform .3s cubic-bezier(.22,1,.36,1);
+    box-shadow:0 24px 70px rgba(0,0,0,.45);overflow-y:auto;
+  }
+  .sb.open{transform:translateX(0);}
+  .tb-burger{display:flex;}
+  .tb-search{display:none;}
+  .tb-ic{margin-left:auto;}
   .kpis{grid-template-columns:1fr 1fr}.grid2{grid-template-columns:1fr}
   .login,.login-form{grid-template-columns:1fr}.login-art{display:none}
+}
+@media(max-width:700px){
+  .content{padding:18px 14px;}
+  .tb{padding:14px 14px;gap:12px;}
+  .tb h2{font-size:1.1rem;}
+  .tb .crumb{display:none;}
+  .kpis{grid-template-columns:1fr 1fr;gap:12px;}
+  .kpi .big{font-size:1.6rem;}
+  .page-header{flex-direction:column;align-items:flex-start;gap:12px;}
+  .page-header > div:last-child{width:100%;}
+  .grid2{grid-template-columns:1fr !important;}
+  /* Wide tables scroll horizontally inside their panel instead of breaking layout */
+  .panel{overflow-x:auto;}
+  .tbl{min-width:560px;}
+  .modal{padding:22px 20px;border-radius:20px;}
+  .modal .field .inp{font-size:16px;} /* prevents iOS zoom-on-focus */
+  .cover-3d{display:none;}
+  .login-form{padding:36px 24px;}
+  .role-tabs{gap:6px;}
+}
+@media(max-width:460px){
+  .kpis{grid-template-columns:1fr;}
+  .seg{width:100%;}
+  .seg span{flex:1;text-align:center;padding:9px 8px;}
 }

@@ -1,6 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 export default function AppShell({ user, activeTab, setActiveTab, onLogout, children }) {
+  const [navOpen, setNavOpen] = useState(false); // mobile drawer
+  const go = (id) => { setActiveTab(id); setNavOpen(false); };
   // Sidebar items definition based on role
   const getSidebarConfig = () => {
     switch (user.role) {
@@ -102,7 +104,9 @@ export default function AppShell({ user, activeTab, setActiveTab, onLogout, chil
 
   return (
     <div className="app">
-      <aside className="sb">
+      {/* Mobile drawer backdrop */}
+      {navOpen && <div className="sb-overlay" onClick={() => setNavOpen(false)} />}
+      <aside className={`sb ${navOpen ? 'open' : ''}`}>
         <div className="sb-brand">
           <span className="sb-logo">
             <span>R</span>
@@ -120,7 +124,7 @@ export default function AppShell({ user, activeTab, setActiveTab, onLogout, chil
               <div
                 key={item.id}
                 className={`sb-item ${activeTab === item.id ? 'active' : ''}`}
-                onClick={() => setActiveTab(item.id)}
+                onClick={() => go(item.id)}
               >
                 <svg className="ic">
                   <use href={`#${item.icon}`} />
@@ -134,7 +138,7 @@ export default function AppShell({ user, activeTab, setActiveTab, onLogout, chil
 
         {/* Logout button at the bottom of sections */}
         <div className="sb-sec">Account</div>
-        <div className="sb-item" onClick={onLogout} style={{ color: 'var(--red)' }}>
+        <div className="sb-item" onClick={() => { setNavOpen(false); onLogout(); }} style={{ color: 'var(--red)' }}>
           <svg className="ic">
             <use href="#i-out" />
           </svg>
@@ -165,6 +169,11 @@ export default function AppShell({ user, activeTab, setActiveTab, onLogout, chil
 
       <div className="main">
         <div className="tb">
+          <button className="tb-burger" aria-label="Menu" onClick={() => setNavOpen(o => !o)}>
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              <path d="M3 6h18M3 12h18M3 18h18" />
+            </svg>
+          </button>
           <div>
             <h2>{getTabLabel(activeTab)}</h2>
             <div className="crumb">Home · {getTabLabel(activeTab)}</div>

@@ -11,6 +11,11 @@ export default function MarksEntry() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
+  const [tests, setTests] = useState([]); // existing test names for quick selection
+
+  useEffect(() => {
+    apiFetch('/api/marks/tests').then(r => r.json()).then(setTests).catch(() => {});
+  }, []);
 
   const fetchData = async () => {
     setLoading(true);
@@ -127,9 +132,14 @@ export default function MarksEntry() {
             <input
               type="text"
               className="inp"
+              list="mk-tests"
+              placeholder="Pick an existing test or type a new one"
               value={testName}
               onChange={(e) => setTestName(e.target.value)}
             />
+            <datalist id="mk-tests">
+              {tests.map((t) => <option key={t} value={t} />)}
+            </datalist>
           </div>
           <div className="field" style={{ margin: 0 }}>
             <label>Class / Subject</label>
