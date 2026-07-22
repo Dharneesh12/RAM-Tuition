@@ -3,7 +3,7 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://dalila-overidealistic-phonogramically.ngrok-free.dev/api/:path*"
+      "destination": "https://specifics-fighting-lately-sides.trycloudflare.com/api/:path*"
     }
   ]
 }
