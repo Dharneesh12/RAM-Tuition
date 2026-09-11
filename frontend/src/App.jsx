@@ -66,7 +66,7 @@ export default function App() {
       case 'admission':
         return <AdmissionForm onAdmissionComplete={() => setActiveTab('students')} />;
       case 'attendance':
-        return <AttendanceMarking />;
+        return <AttendanceMarking user={user} />;
       case 'marks':
         return <MarksEntry />;
       case 'fees':

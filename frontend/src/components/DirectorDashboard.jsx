@@ -29,7 +29,7 @@ export default function DirectorDashboard({ setActiveTab, user }) {
   if (loading) return <div style={{ padding: '20px', fontWeight: 600 }}>Loading Dashboard...</div>;
   if (error) return <div style={{ padding: '20px', color: 'var(--red)' }}>Error: {error}</div>;
 
-  const { stats, recentAdmissions } = data;
+  const { stats, recentAdmissions, attendanceByClass = [] } = data;
 
   // Helper to format currency
   const formatCurrency = (val) => {
@@ -95,34 +95,22 @@ export default function DirectorDashboard({ setActiveTab, user }) {
         <div className="panel">
           <div className="panel-h">
             <h4>Attendance Overview</h4>
-            <span className="lnk">This month ▾</span>
+            <span className="lnk" onClick={() => setActiveTab('attendance')}>This month · by class →</span>
           </div>
-          <div className="bars">
-            <div className="bar-col">
-              <div className="bar" style={{ height: '70%' }}></div>
-              <small>Cls 9</small>
+          {attendanceByClass.length === 0 ? (
+            <div className="empty-state" style={{ padding: '30px 10px' }}>
+              <p>No attendance marked yet this month.</p>
             </div>
-            <div className="bar-col">
-              <div className="bar alt" style={{ height: '88%' }}></div>
-              <small>Cls 10</small>
+          ) : (
+            <div className="bars">
+              {attendanceByClass.map((c, idx) => (
+                <div className="bar-col" key={c.grade}>
+                  <div className={`bar ${idx % 2 ? 'alt' : ''}`} style={{ height: `${Math.max(c.percent, 4)}%` }} title={`${c.percent}%`}></div>
+                  <small>{c.grade.replace('Class ', 'Cls ')} · {c.percent}%</small>
+                </div>
+              ))}
             </div>
-            <div className="bar-col">
-              <div className="bar" style={{ height: '62%' }}></div>
-              <small>Cls 11</small>
-            </div>
-            <div className="bar-col">
-              <div className="bar alt" style={{ height: '95%' }}></div>
-              <small>Cls 12</small>
-            </div>
-            <div className="bar-col">
-              <div className="bar" style={{ height: '80%' }}></div>
-              <small>Maths</small>
-            </div>
-            <div className="bar-col">
-              <div className="bar alt" style={{ height: '74%' }}></div>
-              <small>Science</small>
-            </div>
-          </div>
+          )}
         </div>
 
         {!isStaff && <div className="panel">

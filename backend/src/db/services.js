@@ -1,6 +1,6 @@
 import { db, isMock } from './index.js';
 import * as schema from './schema.js';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, like } from 'drizzle-orm';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -465,18 +465,28 @@ export const getAttendanceByStudent = async (studentId) => {
   return await db.select().from(schema.attendance).where(eq(schema.attendance.studentId, studentId));
 };
 
-export const saveAttendance = async (date, records) => {
+// All attendance records for a given month, e.g. month="2026-07" matches every
+// date starting with that prefix. Used to power the Month View grid + stats.
+export const getAttendanceByMonth = async (month) => {
+  if (isMock) return mockDb.attendance.filter(a => a.date.startsWith(month));
+  return await db.select().from(schema.attendance).where(like(schema.attendance.date, `${month}%`));
+};
+
+export const saveAttendance = async (date, records, markedBy) => {
+  const now = new Date().toISOString();
   if (isMock) {
     records.forEach(rec => {
       const idx = mockDb.attendance.findIndex(a => a.date === date && a.studentId === rec.studentId);
       if (idx !== -1) {
         mockDb.attendance[idx].status = rec.status;
+        mockDb.attendance[idx].markedBy = markedBy || mockDb.attendance[idx].markedBy || null;
+        mockDb.attendance[idx].updatedAt = now;
       } else {
         const nextId = mockDb.attendance.length > 0 ? Math.max(...mockDb.attendance.map(a => a.id)) + 1 : 1;
-        mockDb.attendance.push({ id: nextId, studentId: rec.studentId, date, status: rec.status });
+        mockDb.attendance.push({ id: nextId, studentId: rec.studentId, date, status: rec.status, markedBy: markedBy || null, updatedAt: now });
       }
     });
-    return { success: true };
+    return { success: true, count: records.length, updatedAt: now };
   }
   for (const rec of records) {
     const existing = await db.select().from(schema.attendance).where(
@@ -488,7 +498,7 @@ export const saveAttendance = async (date, records) => {
       await db.insert(schema.attendance).values({ studentId: rec.studentId, date, status: rec.status });
     }
   }
-  return { success: true };
+  return { success: true, count: records.length, updatedAt: now };
 };
 
 // -------------------------------------------------------------

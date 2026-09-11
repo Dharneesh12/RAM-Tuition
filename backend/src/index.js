@@ -216,10 +216,14 @@ app.delete('/api/students/:id', async (req, res) => {
 // ATTENDANCE ROUTES
 // -------------------------------------------------------------
 app.get('/api/attendance', async (req, res) => {
-  const { date } = req.query;
-  if (!date) return res.status(400).json({ error: 'Date query param required (YYYY-MM-DD)' });
+  const { date, month } = req.query;
+  if (!date && !month) {
+    return res.status(400).json({ error: 'date (YYYY-MM-DD) or month (YYYY-MM) query param required' });
+  }
   try {
-    const attendance = await services.getAttendanceByDate(date);
+    const attendance = month
+      ? await services.getAttendanceByMonth(month)
+      : await services.getAttendanceByDate(date);
     res.json(attendance);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -236,13 +240,13 @@ app.get('/api/attendance/student/:id', async (req, res) => {
 });
 
 app.post('/api/attendance', async (req, res) => {
-  const { date, records } = req.body;
+  const { date, records, markedBy } = req.body;
   if (!date || !records || !Array.isArray(records)) {
     return res.status(400).json({ error: 'Missing date or records array' });
   }
   try {
-    await services.saveAttendance(date, records);
-    res.json({ message: 'Attendance saved successfully' });
+    const result = await services.saveAttendance(date, records, markedBy);
+    res.json({ message: 'Attendance saved successfully', ...result });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -494,6 +498,22 @@ app.get('/api/dashboard', async (req, res) => {
       if ((m.marksObtained / m.maxMarks) * 100 < 50) lowScoresCount++;
     });
 
+    // Real per-class attendance rate for the current month (late counts as present)
+    const thisMonth = new Date().toISOString().slice(0, 7);
+    const monthAttendance = await services.getAttendanceByMonth(thisMonth);
+    const byClass = {};
+    students.forEach(s => {
+      const recs = monthAttendance.filter(a => a.studentId === s.id);
+      if (recs.length === 0) return;
+      const bucket = (byClass[s.grade] = byClass[s.grade] || { presentLike: 0, total: 0 });
+      bucket.presentLike += recs.filter(r => r.status === 'present' || r.status === 'late').length;
+      bucket.total += recs.length;
+    });
+    const attendanceByClass = Object.keys(byClass).sort().map(grade => ({
+      grade,
+      percent: byClass[grade].total > 0 ? Math.round((byClass[grade].presentLike / byClass[grade].total) * 100) : 0
+    }));
+
     res.json({
       stats: {
         totalStudents,
@@ -507,7 +527,8 @@ app.get('/api/dashboard', async (req, res) => {
         totalExpectedAmount: collectedAmount + pendingAmount
       },
       recentAdmissions: students.slice(-4).reverse(),
-      notices: notices.slice(0, 3)
+      notices: notices.slice(0, 3),
+      attendanceByClass
     });
   } catch (error) {
     res.status(500).json({ error: error.message });

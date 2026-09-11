@@ -81,14 +81,34 @@ export default function StudentPortal({ user, activeTab = 'dashboard' }) {
   const inr = (v) => `₹${Number(v || 0).toLocaleString('en-IN')}`;
 
   // --- Attendance stats (day-by-day, month view + absent dates) ---
+  // Late still counts as physically present for the percentage; leave/absent don't.
   const presentCount = attendance.filter(a => a.status === 'present').length;
+  const lateCount = attendance.filter(a => a.status === 'late').length;
   const absentRecords = attendance.filter(a => a.status === 'absent');
+  const leaveRecords = attendance.filter(a => a.status === 'leave');
   const totalMarked = attendance.length;
-  const attendancePct = totalMarked ? Math.round((presentCount / totalMarked) * 100) : 96;
+  const attendancePct = totalMarked ? Math.round(((presentCount + lateCount) / totalMarked) * 100) : 96;
   const fmtDay = (d) => {
     const parts = (d || '').split('-');
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     return parts.length === 3 ? `${parts[2]} ${months[parseInt(parts[1], 10) - 1]}` : d;
+  };
+  const ATT_STYLE = {
+    present: { bg: 'var(--green-bg)', fg: '#158a44', border: 'rgba(34,197,94,.25)' },
+    late: { bg: 'var(--amber-bg)', fg: '#b4770a', border: 'rgba(245,158,11,.3)' },
+    leave: { bg: '#EFEAFF', fg: '#5a4bd6', border: 'rgba(108,92,231,.25)' },
+    absent: { bg: 'var(--red-bg)', fg: '#d13636', border: 'rgba(255,77,77,.25)' },
+  };
+  // Group the attendance log by month for a readable multi-month history
+  const attendanceByMonth = attendance.reduce((acc, a) => {
+    const key = (a.date || '').slice(0, 7);
+    (acc[key] = acc[key] || []).push(a);
+    return acc;
+  }, {});
+  const attendanceMonthKeys = Object.keys(attendanceByMonth).sort();
+  const monthLabel = (key) => {
+    const [y, m] = key.split('-').map(Number);
+    return y && m ? new Date(y, m - 1, 1).toLocaleDateString('en-IN', { month: 'long', year: 'numeric' }) : key;
   };
 
   // --- Marks grouped by month (month view for test marks) ---
@@ -143,7 +163,7 @@ export default function StudentPortal({ user, activeTab = 'dashboard' }) {
         }}
       >
         <div>
-          <b style={{ fontFamily: 'var(--disp)', fontSize: '1.2rem' }}>96%</b>
+          <b style={{ fontFamily: 'var(--disp)', fontSize: '1.2rem' }}>{attendancePct}%</b>
           <br />
           <small style={{ color: 'var(--muted)' }}>Attendance</small>
         </div>
@@ -162,7 +182,7 @@ export default function StudentPortal({ user, activeTab = 'dashboard' }) {
     <div className="panel">
       <div className="panel-h">
         <h4>My Attendance</h4>
-        <span className="lnk">July 2026</span>
+        <span className="lnk">{totalMarked} day{totalMarked === 1 ? '' : 's'} recorded</span>
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: '22px', flexWrap: 'wrap' }}>
         <div className="ring" style={{ background: `conic-gradient(var(--mint) 0 ${attendancePct}%, #e7ecf7 ${attendancePct}% 100%)` }}>
@@ -173,39 +193,58 @@ export default function StudentPortal({ user, activeTab = 'dashboard' }) {
         </div>
         <div style={{ fontSize: '.9rem', color: 'var(--ink2)', lineHeight: 2 }}>
           <b>{presentCount}</b> / {totalMarked || '—'} days present
+          {lateCount > 0 && <><br /><span style={{ color: 'var(--gold)' }}>{lateCount} day{lateCount === 1 ? '' : 's'} late</span></>}
           <br />
           <span style={{ color: absentRecords.length ? 'var(--red)' : 'var(--muted)' }}>
             {absentRecords.length} day{absentRecords.length === 1 ? '' : 's'} absent
           </span>
+          {leaveRecords.length > 0 && <><br /><span style={{ color: '#5a4bd6' }}>{leaveRecords.length} day{leaveRecords.length === 1 ? '' : 's'} on leave</span></>}
         </div>
       </div>
 
-      {/* Month view — one chip per marked day (green=present, red=absent) */}
+      {/* Attendance log — grouped by month, one chip per marked day */}
       <div style={{ marginTop: 18 }}>
-        <div style={{ fontSize: '.78rem', fontWeight: 700, color: 'var(--muted)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '.05em' }}>Month View · July</div>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-          {attendance.length === 0 && <span style={{ color: 'var(--muted)', fontSize: '.85rem' }}>No attendance marked yet.</span>}
-          {attendance.map((a) => (
-            <div key={a.id} title={`${fmtDay(a.date)} · ${a.status}`}
-              style={{
-                minWidth: 44, textAlign: 'center', padding: '7px 6px', borderRadius: 10, fontSize: '.72rem', fontWeight: 700,
-                background: a.status === 'present' ? 'var(--green-bg)' : 'var(--red-bg)',
-                color: a.status === 'present' ? '#158a44' : '#d13636',
-                border: `1px solid ${a.status === 'present' ? 'rgba(34,197,94,.25)' : 'rgba(255,77,77,.25)'}`,
-              }}>
-              {fmtDay(a.date)}
+        {attendance.length === 0 && <span style={{ color: 'var(--muted)', fontSize: '.85rem' }}>No attendance marked yet.</span>}
+        {attendanceMonthKeys.map((key) => (
+          <div key={key} style={{ marginBottom: 14 }}>
+            <div style={{ fontSize: '.78rem', fontWeight: 700, color: 'var(--muted)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '.05em' }}>
+              {monthLabel(key)}
             </div>
-          ))}
-        </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+              {attendanceByMonth[key].map((a) => {
+                const style = ATT_STYLE[a.status] || ATT_STYLE.present;
+                return (
+                  <div key={a.id} title={`${fmtDay(a.date)} · ${a.status}`}
+                    style={{
+                      minWidth: 44, textAlign: 'center', padding: '7px 6px', borderRadius: 10, fontSize: '.72rem', fontWeight: 700,
+                      background: style.bg, color: style.fg, border: `1px solid ${style.border}`,
+                    }}>
+                    {fmtDay(a.date)}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        ))}
       </div>
 
-      {/* Absent dates list */}
+      {/* Absent / leave dates callouts */}
       {absentRecords.length > 0 && (
-        <div style={{ marginTop: 16, background: 'var(--red-bg)', borderRadius: 12, padding: '12px 14px' }}>
+        <div style={{ marginTop: 8, background: 'var(--red-bg)', borderRadius: 12, padding: '12px 14px' }}>
           <b style={{ color: '#d13636', fontSize: '.85rem' }}>Absent dates</b>
           <div style={{ marginTop: 6, display: 'flex', flexWrap: 'wrap', gap: 8 }}>
             {absentRecords.map(a => (
               <span key={a.id} className="pill p-absent">{fmtDay(a.date)}</span>
+            ))}
+          </div>
+        </div>
+      )}
+      {leaveRecords.length > 0 && (
+        <div style={{ marginTop: 10, background: '#EFEAFF', borderRadius: 12, padding: '12px 14px' }}>
+          <b style={{ color: '#5a4bd6', fontSize: '.85rem' }}>Leave dates</b>
+          <div style={{ marginTop: 6, display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+            {leaveRecords.map(a => (
+              <span key={a.id} className="pill p-leave">{fmtDay(a.date)}</span>
             ))}
           </div>
         </div>
