@@ -659,9 +659,12 @@ select.inp{cursor:pointer;}
 }
 
 /* Tablet — collapse dense inline grids (3–4 col forms/KPIs) down to 2 columns.
-   Uses an attribute selector so it also overrides React inline `style` grids. */
+   Uses an attribute selector so it also overrides React inline `style` grids.
+   `.grid2` is excluded: it already has its own single-column rule above (≤1100px)
+   and, being a plain class selector, would otherwise lose to this more-specific
+   attribute selector and get stuck at 2 columns instead of stacking. */
 @media(min-width:641px) and (max-width:1024px){
-  .content [style*="grid-template-columns"]{ grid-template-columns:1fr 1fr !important; }
+  .content [style*="grid-template-columns"]:not(.grid2){ grid-template-columns:1fr 1fr !important; }
 }
 
 @media(max-width:700px){
@@ -687,7 +690,7 @@ select.inp{cursor:pointer;}
 
 /* Phone — every inline grid inside content or a modal becomes a single column */
 @media(max-width:640px){
-  .content [style*="grid-template-columns"],
+  .content [style*="grid-template-columns"]:not(.grid2),
   .modal [style*="grid-template-columns"]{ grid-template-columns:1fr !important; }
   .modal [style*="grid-column"]{ grid-column:auto !important; }
   .grid2{grid-template-columns:1fr !important;}
