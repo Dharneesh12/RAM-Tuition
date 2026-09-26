@@ -9,94 +9,24 @@ import { fileURLToPath } from 'url';
 // record survives backend restarts (data written to backend/src/db/data.json).
 const DATA_FILE = path.join(path.dirname(fileURLToPath(import.meta.url)), 'data.json');
 
-// In-Memory Database for Mock Fallback
+// In-Memory Database for Mock Fallback — seed used only when data.json
+// doesn't exist yet (fresh deploy). Kept in sync with the cleaned,
+// single-admin state so a fresh deploy never resurrects old test data.
 const mockDb = {
   users: [
-    { id: 1, username: 'director@ramtuitioncentre.com', password: 'password', role: 'director', name: 'R. Selvam' },
-    { id: 2, username: 'staff@ramtuitioncentre.com', password: 'password', role: 'staff', name: 'Suganya K' },
-    { id: 3, username: 'student@ramtuitioncentre.com', password: 'password', role: 'student', name: 'Arun Kumar' }
+    { id: 1, username: 'director@ramtuitioncentre.com', password: 'password', role: 'director', name: 'R. Selvam' }
   ],
-  staff: [
-    { id: 1, name: 'Suganya K', email: 'suganya@ramtuitioncentre.com', phone: '+91 98765 11111', role: 'Mathematics Teacher', classes: ['Class 10', 'Class 12'], subjects: ['Mathematics'], joined: '2021-06-01', status: 'active' },
-    { id: 2, name: 'Mohan R', email: 'mohan@ramtuitioncentre.com', phone: '+91 98765 22222', role: 'Science Teacher', classes: ['Class 9', 'Class 10'], subjects: ['Physics', 'Chemistry', 'Biology'], joined: '2022-05-15', status: 'active' },
-    { id: 3, name: 'Naveen Raj', email: 'naveen@ramtuitioncentre.com', phone: '+91 98765 33333', role: 'English Instructor', classes: ['Class 10', 'Class 11', 'Class 12'], subjects: ['English'], joined: '2023-01-10', status: 'active' },
-    { id: 4, name: 'Meera G', email: 'meera@ramtuitioncentre.com', phone: '+91 98765 44444', role: 'Social Science Educator', classes: ['Class 9', 'Class 10'], subjects: ['History', 'Civics', 'Geography'], joined: '2023-08-01', status: 'active' }
-  ],
-  students: [
-    { id: 1, rollNo: 'R-1042', name: 'Arun Kumar', grade: 'Class 12', board: 'CBSE', school: 'Govt. Hr. Sec. School, Ganapathy', email: 'arun@gmail.com', fatherName: 'Kumar S', fatherWhatsapp: '+91 98765 43211', motherName: 'Anitha K', motherWhatsapp: '+91 98765 12341', subjects: ['Mathematics', 'Physics'], photoUrl: null, status: 'active' },
-    { id: 2, rollNo: 'R-1043', name: 'Sneha Priya', grade: 'Class 10', board: 'State Board', school: 'Mani Hr. Sec. School, Coimbatore', email: 'sneha@gmail.com', fatherName: 'Priya Raj', fatherWhatsapp: '+91 98765 43212', motherName: 'Devi P', motherWhatsapp: '+91 98765 12342', subjects: ['Mathematics', 'Science'], photoUrl: null, status: 'active' },
-    { id: 3, rollNo: 'R-1044', name: 'Karthik V', grade: 'Class 11', board: 'CBSE', school: 'Govt. Hr. Sec. School, Ganapathy', email: 'karthik@gmail.com', fatherName: 'Venkat R', fatherWhatsapp: '+91 98765 43213', motherName: 'Lakshmi V', motherWhatsapp: '+91 98765 12343', subjects: ['Mathematics'], photoUrl: null, status: 'active' },
-    { id: 4, rollNo: 'R-1045', name: 'Divya M', grade: 'Class 9', board: 'State Board', school: 'Govt. Hr. Sec. School, Ganapathy', email: 'divya@gmail.com', fatherName: 'Mani T', fatherWhatsapp: '+91 98765 43214', motherName: 'Chitra M', motherWhatsapp: '+91 98765 12344', subjects: ['Science'], photoUrl: null, status: 'active' },
-    { id: 5, rollNo: 'R-1051', name: 'Ranjith V', grade: 'Class 10', board: 'State Board', school: 'Govt. Hr. Sec. School, Ganapathy', email: 'ranjith@gmail.com', fatherName: 'Vasudevan G', fatherWhatsapp: '+91 98765 43215', motherName: 'Geetha V', motherWhatsapp: '+91 98765 12345', subjects: ['Mathematics'], photoUrl: null, status: 'active' },
-    { id: 6, rollNo: 'R-1052', name: 'Divya M (Class 10)', grade: 'Class 10', board: 'CBSE', school: 'Govt. Hr. Sec. School, Ganapathy', email: 'divya10@gmail.com', fatherName: 'Muthu K', fatherWhatsapp: '+91 98765 43216', motherName: 'Uma M', motherWhatsapp: '+91 98765 12346', subjects: ['Mathematics', 'Science'], photoUrl: null, status: 'active' },
-    { id: 7, rollNo: 'R-1058', name: 'Harini N', grade: 'Class 10', board: 'State Board', school: 'Govt. Hr. Sec. School, Ganapathy', email: 'harini@gmail.com', fatherName: 'Narayanan A', fatherWhatsapp: '+91 98765 43217', motherName: 'Saritha N', motherWhatsapp: '+91 98765 12347', subjects: ['Mathematics', 'Science'], photoUrl: null, status: 'active' }
-  ],
-  attendance: [
-    // Spread across several July dates so the month view + absent-date list are meaningful
-    { id: 1, studentId: 1, date: '2026-07-01', status: 'present' },
-    { id: 2, studentId: 1, date: '2026-07-02', status: 'present' },
-    { id: 3, studentId: 1, date: '2026-07-03', status: 'absent' },
-    { id: 4, studentId: 1, date: '2026-07-06', status: 'present' },
-    { id: 5, studentId: 1, date: '2026-07-07', status: 'present' },
-    { id: 6, studentId: 1, date: '2026-07-08', status: 'present' },
-    { id: 7, studentId: 1, date: '2026-07-09', status: 'present' },
-    { id: 8, studentId: 1, date: '2026-07-10', status: 'absent' },
-    { id: 9, studentId: 2, date: '2026-07-01', status: 'present' },
-    { id: 10, studentId: 2, date: '2026-07-08', status: 'present' },
-    { id: 11, studentId: 5, date: '2026-07-08', status: 'absent' },
-    { id: 12, studentId: 5, date: '2026-07-03', status: 'absent' },
-    { id: 13, studentId: 6, date: '2026-07-08', status: 'present' },
-    { id: 14, studentId: 7, date: '2026-07-08', status: 'present' }
-  ],
-  // testMonth lets the student portal group results into a month view.
-  marks: [
-    // June test
-    { id: 6, studentId: 1, testName: 'Unit Test 1 — Algebra', testMonth: 'June', subject: 'Maths', marksObtained: 42, maxMarks: 50, remarks: 'Good improvement' },
-    { id: 7, studentId: 2, testName: 'Unit Test 1 — Algebra', testMonth: 'June', subject: 'Maths', marksObtained: 35, maxMarks: 50, remarks: 'Revise quadratic equations' },
-    { id: 8, studentId: 1, testName: 'Unit Test 1 — Algebra', testMonth: 'June', subject: 'Physics', marksObtained: 40, maxMarks: 50, remarks: 'Steady' },
-    // July test
-    { id: 1, studentId: 1, testName: 'Unit Test 2 — Trigonometry', testMonth: 'July', subject: 'Maths', marksObtained: 46, maxMarks: 50, remarks: 'Minor calculation slip in Q7' },
-    { id: 2, studentId: 2, testName: 'Unit Test 2 — Trigonometry', testMonth: 'July', subject: 'Maths', marksObtained: 39, maxMarks: 50, remarks: 'Identity proof incomplete' },
-    { id: 3, studentId: 5, testName: 'Unit Test 2 — Trigonometry', testMonth: 'July', subject: 'Maths', marksObtained: 21, maxMarks: 50, remarks: 'Weak on formulae · needs revision of ratios' },
-    { id: 4, studentId: 6, testName: 'Unit Test 2 — Trigonometry', testMonth: 'July', subject: 'Maths', marksObtained: 44, maxMarks: 50, remarks: '—' },
-    { id: 5, studentId: 7, testName: 'Unit Test 2 — Trigonometry', testMonth: 'July', subject: 'Maths', marksObtained: 18, maxMarks: 50, remarks: 'Absent for 2 topics · arrange doubt session' }
-  ],
-  // Each fee record: amount = monthly tuition total; advance = amount paid ahead
-  // toward future months. Per-subject split is derived on the client from the
-  // student's enrolled subjects.
-  fees: [
-    // Previous month (June) — a couple left pending to surface carry-over dues
-    { id: 8, studentId: 1, month: 'June', amount: 2500, advance: 0, status: 'paid' },
-    { id: 9, studentId: 2, month: 'June', amount: 2000, advance: 0, status: 'pending' },
-    { id: 10, studentId: 3, month: 'June', amount: 2200, advance: 0, status: 'paid' },
-    { id: 11, studentId: 4, month: 'June', amount: 1800, advance: 0, status: 'pending' },
-    { id: 12, studentId: 5, month: 'June', amount: 2000, advance: 0, status: 'paid' },
-    { id: 13, studentId: 6, month: 'June', amount: 2000, advance: 0, status: 'paid' },
-    { id: 14, studentId: 7, month: 'June', amount: 2000, advance: 0, status: 'paid' },
-    // Current month (July)
-    { id: 1, studentId: 1, month: 'July', amount: 2500, advance: 1000, status: 'paid' },
-    { id: 2, studentId: 2, month: 'July', amount: 2000, advance: 0, status: 'pending' },
-    { id: 3, studentId: 3, month: 'July', amount: 2200, advance: 0, status: 'paid' },
-    { id: 4, studentId: 4, month: 'July', amount: 1800, advance: 0, status: 'pending' },
-    { id: 5, studentId: 5, month: 'July', amount: 2000, advance: 500, status: 'paid' },
-    { id: 6, studentId: 6, month: 'July', amount: 2000, advance: 0, status: 'paid' },
-    { id: 7, studentId: 7, month: 'July', amount: 2000, advance: 0, status: 'paid' }
-  ],
-  notices: [
-    { id: 1, title: 'Quarterly Exam Timetable Released', message: 'Class 10 & 12 quarterly exams begin 22 July. Timetable shared on parent WhatsApp groups.', publishDate: '2026-07-05', expiryDate: '2026-07-22', audience: 'All' },
-    { id: 2, title: 'Fee Reminder — July', message: 'Kindly clear pending fees before 15 July to avoid late charges.', publishDate: '2026-07-03', expiryDate: '2026-07-15', audience: 'All' },
-    { id: 3, title: 'Extra Doubt-Clearing Session', message: 'Special Maths session for Class 12 this Sunday, 10 AM – 12 PM.', publishDate: '2026-07-01', expiryDate: '2026-07-06', audience: 'Class 12' }
-  ],
-  workDone: [
-    { id: 1, date: '2026-07-08', classSubject: 'Class 10 · Maths', topic: 'Trigonometry — Heights & Distances', staffName: 'Suganya K', remarks: 'Practice sums assigned' },
-    { id: 2, date: '2026-07-07', classSubject: 'Class 12 · Maths', topic: 'Integration — Definite Integrals', staffName: 'Suganya K', remarks: 'Revision on Sunday' },
-    { id: 3, date: '2026-07-06', classSubject: 'Class 10 · Science', topic: 'Chemical Reactions & Equations', staffName: 'Mohan R', remarks: 'Lab demo done' },
-    { id: 4, date: '2026-07-05', classSubject: 'Class 12 · Maths', topic: 'Matrices — Determinants', staffName: 'Suganya K', remarks: '—' }
-  ],
+  staff: [],
+  students: [],
+  attendance: [],
+  marks: [],
+  fees: [],
+  notices: [],
+  workDone: [],
   // Admin-configurable classes & subjects — drive every dropdown across the app.
   config: {
-    classes: ['Class 9', 'Class 10', 'Class 11', 'Class 12'],
-    subjects: ['Mathematics', 'Physics', 'Chemistry', 'Biology', 'Science', 'English', 'Social Science']
+    classes: ['Class 9', 'Class 10', 'Class 11', 'Class 12', 'Class 9 CBSE'],
+    subjects: ['Mathematics', 'Biology', 'Science', 'English', 'Social Science']
   }
 };
 
