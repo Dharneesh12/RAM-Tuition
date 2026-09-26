@@ -3,7 +3,7 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://six-carpets-tell.loca.lt/api/:path*"
+      "destination": "https://bitter-schools-warn.loca.lt/api/:path*"
     }
   ]
 }
