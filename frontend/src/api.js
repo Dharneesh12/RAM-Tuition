@@ -17,14 +17,42 @@ const normalizeBase = (raw) => {
 
 export const API_BASE = normalizeBase(import.meta.env.VITE_API_BASE);
 
+// Status codes worth a silent retry — the free tunnel backing the API proxy
+// occasionally drops a request (timeout/relay hiccup) even though the
+// backend itself is healthy, so one blip shouldn't surface as a user error.
+const RETRYABLE_STATUSES = new Set([408, 502, 503, 504]);
+const RETRY_DELAYS_MS = [400, 900];
+
+const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
 // Drop-in replacement for fetch() that prefixes API paths with API_BASE.
 // Also sends `ngrok-skip-browser-warning` so ngrok's free-tier interstitial
 // page never replaces the JSON response (harmless when not using ngrok).
-export const apiFetch = (path, options = {}) =>
-  fetch(`${API_BASE}${path}`, {
-    ...options,
-    headers: {
-      'ngrok-skip-browser-warning': 'true',
-      ...(options.headers || {}),
-    },
-  });
+// Retries transient tunnel failures a couple of times before giving up.
+export const apiFetch = async (path, options = {}) => {
+  const doFetch = () =>
+    fetch(`${API_BASE}${path}`, {
+      ...options,
+      headers: {
+        'ngrok-skip-browser-warning': 'true',
+        ...(options.headers || {}),
+      },
+    });
+
+  for (let attempt = 0; ; attempt++) {
+    try {
+      const response = await doFetch();
+      if (RETRYABLE_STATUSES.has(response.status) && attempt < RETRY_DELAYS_MS.length) {
+        await wait(RETRY_DELAYS_MS[attempt]);
+        continue;
+      }
+      return response;
+    } catch (err) {
+      if (attempt < RETRY_DELAYS_MS.length) {
+        await wait(RETRY_DELAYS_MS[attempt]);
+        continue;
+      }
+      throw err;
+    }
+  }
+};
