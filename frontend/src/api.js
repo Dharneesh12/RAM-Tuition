@@ -56,3 +56,25 @@ export const apiFetch = async (path, options = {}) => {
     }
   }
 };
+
+// Like apiFetch, but also guards against a tunnel hiccup that corrupts the
+// response body while still reporting HTTP 200 (so apiFetch's status-based
+// retry never kicks in) — that shows up as a JSON.parse failure. Retries the
+// whole request in that case too, and returns `{ response, data }` so callers
+// don't need their own try/catch around response.json().
+export const apiFetchJson = async (path, options = {}) => {
+  for (let attempt = 0; ; attempt++) {
+    const response = await apiFetch(path, options);
+    const text = await response.text();
+    try {
+      const data = text ? JSON.parse(text) : {};
+      return { response, data };
+    } catch (err) {
+      if (attempt < RETRY_DELAYS_MS.length) {
+        await wait(RETRY_DELAYS_MS[attempt]);
+        continue;
+      }
+      throw new Error('Server returned an invalid response — please try again.');
+    }
+  }
+};
