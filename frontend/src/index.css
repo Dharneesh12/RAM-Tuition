@@ -683,6 +683,9 @@ select.inp{cursor:pointer;}
   .modal{padding:22px 18px;border-radius:20px;}
   .modal .inp, .field .inp{font-size:16px;} /* prevents iOS zoom-on-focus */
   .cover-3d{display:none;}
+  .login{grid-template-columns:1fr;min-height:0;}
+  .login-art{padding:28px 24px;}
+  .login-art h2{font-size:1.5rem;margin-top:18px;}
   .login-form{padding:36px 24px;}
   .role-tabs{gap:6px;}
   .phone{max-width:100%;}   /* student portal mobile-preview never overflows */

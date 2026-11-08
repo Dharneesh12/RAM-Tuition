@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Login from './components/Login.jsx';
 import AppShell from './components/AppShell.jsx';
 import DirectorDashboard from './components/DirectorDashboard.jsx';
@@ -15,19 +15,53 @@ import StudentPortal from './components/StudentPortal.jsx';
 import UserManagement from './components/UserManagement.jsx';
 import ClassSubjectSettings from './components/ClassSubjectSettings.jsx';
 
-export default function App() {
-  const [user, setUser] = useState(null); // { id, name, username, role }
-  const [activeTab, setActiveTab] = useState('dashboard');
+const SESSION_KEY = 'ramTuitionSession';
 
-  const handleLoginSuccess = (userData) => {
+// Restore a previously saved session (if any) so refreshing the page doesn't
+// log the user out. "Keep me signed in" decides which storage was used:
+// localStorage survives browser restarts, sessionStorage clears on tab close.
+const loadSession = () => {
+  const raw = localStorage.getItem(SESSION_KEY) || sessionStorage.getItem(SESSION_KEY);
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+};
+
+export default function App() {
+  const initialSession = loadSession();
+  const [user, setUser] = useState(initialSession?.user || null); // { id, name, username, role }
+  const [activeTab, setActiveTab] = useState(initialSession?.activeTab || 'dashboard');
+  // Tracks which storage the current session lives in, so tab changes get
+  // persisted to the same place; null means no session is being persisted.
+  const storageRef = useRef(initialSession ? (localStorage.getItem(SESSION_KEY) ? 'local' : 'session') : null);
+
+  const handleLoginSuccess = (userData, keepSignedIn) => {
+    storageRef.current = keepSignedIn ? 'local' : 'session';
+    const payload = JSON.stringify({ user: userData, activeTab: 'dashboard' });
+    (keepSignedIn ? localStorage : sessionStorage).setItem(SESSION_KEY, payload);
+    (keepSignedIn ? sessionStorage : localStorage).removeItem(SESSION_KEY);
     setUser(userData);
     setActiveTab('dashboard');
   };
 
   const handleLogout = () => {
+    localStorage.removeItem(SESSION_KEY);
+    sessionStorage.removeItem(SESSION_KEY);
+    storageRef.current = null;
     setUser(null);
     setActiveTab('dashboard');
   };
+
+  // Keep the persisted session's activeTab in sync so a refresh lands back
+  // on the same page instead of bouncing to the dashboard.
+  useEffect(() => {
+    if (!storageRef.current || !user) return;
+    const store = storageRef.current === 'local' ? localStorage : sessionStorage;
+    store.setItem(SESSION_KEY, JSON.stringify({ user, activeTab }));
+  }, [activeTab, user]);
 
   // When authenticated, run the app full-screen (no page scroll / body padding)
   useEffect(() => {

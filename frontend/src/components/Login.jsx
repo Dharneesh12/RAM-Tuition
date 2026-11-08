@@ -38,7 +38,7 @@ export default function Login({ onLoginSuccess }) {
         throw new Error(data.error || 'Login failed');
       }
 
-      onLoginSuccess(data);
+      onLoginSuccess(data, keepSignedIn);
     } catch (err) {
       setError(err.message);
     } finally {
