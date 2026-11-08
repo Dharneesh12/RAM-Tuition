@@ -22,7 +22,7 @@ export default function AppShell({ user, activeTab, setActiveTab, onLogout, chil
               title: 'Academics',
               items: [
                 { id: 'attendance', label: 'Attendance', icon: 'i-cal' },
-                { id: 'marks', label: 'Marks & Tests', icon: 'i-clip', badge: 12 },
+                { id: 'marks', label: 'Marks & Tests', icon: 'i-clip' },
                 { id: 'workdone', label: 'Work Done', icon: 'i-book' }
               ]
             },
@@ -153,7 +153,7 @@ export default function AppShell({ user, activeTab, setActiveTab, onLogout, chil
           </div>
           <div>
             <b>{user.name}</b>
-            <small>{user.role === 'director' ? 'Managing Director' : user.role === 'staff' ? 'Maths · Class 10, 12' : `Roll R-1042`}</small>
+            <small>{user.role === 'director' ? 'Managing Director' : user.role === 'staff' ? 'Staff Member' : 'Student'}</small>
           </div>
         </div>
 

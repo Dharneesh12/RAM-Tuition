@@ -16,11 +16,14 @@ export default function StudentPortal({ user, activeTab = 'dashboard' }) {
 
   const fetchStudentData = async () => {
     try {
-      // 1. Fetch student list to find this student
+      // 1. Fetch student list to find this student — match by email, which is
+      // always kept in sync with the login username (see backend's
+      // ensureLinkedPerson/ensureLinkedUser). Matching by name instead would
+      // risk showing one student another's attendance/marks/fees whenever
+      // names collide or drift out of sync.
       const studRes = await apiFetch('/api/students');
       const studData = await studRes.json();
-      // Default to roll R-1042 (Arun Kumar) if no matching user roll
-      const student = studData.find(s => s.name === user.name) || studData.find(s => s.rollNo === 'R-1042') || studData[0];
+      const student = studData.find(s => s.email === user.username) || null;
       setStudentDetails(student);
 
       if (student) {
@@ -56,13 +59,16 @@ export default function StudentPortal({ user, activeTab = 'dashboard' }) {
 
   if (loading) return <div style={{ padding: '20px', fontWeight: 600 }}>Loading Student Portal...</div>;
   if (error) return <div style={{ padding: '20px', color: 'var(--red)' }}>Error: {error}</div>;
+  if (!studentDetails) {
+    return (
+      <div className="empty-state">
+        <div className="icon">🔍</div>
+        <p>No student record is linked to this login yet. Ask the director to check your account's email in User Management.</p>
+      </div>
+    );
+  }
 
-  const student = studentDetails || {
-    name: 'Arun Kumar',
-    rollNo: 'R-1042',
-    grade: 'Class 12',
-    subjects: ['Mathematics', 'Physics']
-  };
+  const student = studentDetails;
 
   // Avatar Initials
   const initials = student.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();

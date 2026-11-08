@@ -10,6 +10,7 @@ export default function MarksEntry() {
   const [maxMarks, setMaxMarks] = useState(50);
   const [students, setStudents] = useState([]);
   const [marksData, setMarksData] = useState({}); // { studentId: { marksObtained: '', remarks: '' } }
+  const [loadedMarks, setLoadedMarks] = useState({}); // baseline snapshot from the server, to detect cleared entries
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
@@ -43,6 +44,7 @@ export default function MarksEntry() {
         };
       });
       setMarksData(initialMarks);
+      setLoadedMarks(initialMarks);
     } catch (err) {
       setMessage(`Error loading marks: ${err.message}`);
     } finally {
@@ -78,14 +80,23 @@ export default function MarksEntry() {
     setSaving(true);
     setMessage('');
 
-    const recordsArray = Object.keys(marksData)
-      .filter((studentId) => marksData[studentId].marksObtained !== '')
-      .map((studentId) => ({
-        studentId: parseInt(studentId),
-        marksObtained: parseInt(marksData[studentId].marksObtained),
-        maxMarks: parseInt(maxMarks),
-        remarks: marksData[studentId].remarks
-      }));
+    // Students whose mark was entered before and is now cleared back to blank
+    // need an explicit null sent so the backend deletes the stale record —
+    // otherwise the old mark silently reappears on the next load/refresh.
+    const clearedIds = Object.keys(loadedMarks).filter(
+      (id) => loadedMarks[id]?.marksObtained !== '' && marksData[id]?.marksObtained === ''
+    );
+    const recordsArray = [
+      ...Object.keys(marksData)
+        .filter((studentId) => marksData[studentId].marksObtained !== '')
+        .map((studentId) => ({
+          studentId: parseInt(studentId),
+          marksObtained: parseInt(marksData[studentId].marksObtained),
+          maxMarks: parseInt(maxMarks),
+          remarks: marksData[studentId].remarks
+        })),
+      ...clearedIds.map((studentId) => ({ studentId: parseInt(studentId), marksObtained: null, maxMarks: parseInt(maxMarks), remarks: '' })),
+    ];
 
     try {
       const response = await apiFetch('/api/marks', {
@@ -102,6 +113,7 @@ export default function MarksEntry() {
         throw new Error('Failed to save marks');
       }
 
+      setLoadedMarks(marksData);
       setMessage('Marks saved successfully!');
     } catch (err) {
       setMessage(`Error saving marks: ${err.message}`);

@@ -402,11 +402,18 @@ export const getAttendanceByMonth = async (month) => {
   return await db.select().from(schema.attendance).where(like(schema.attendance.date, `${month}%`));
 };
 
+// A falsy `status` means the student was un-marked back to "no status" —
+// delete their record for that day instead of upserting, otherwise a cleared
+// mark silently keeps its old value on the next load/refresh.
 export const saveAttendance = async (date, records, markedBy) => {
   const now = new Date().toISOString();
   if (isMock) {
     records.forEach(rec => {
       const idx = mockDb.attendance.findIndex(a => a.date === date && a.studentId === rec.studentId);
+      if (!rec.status) {
+        if (idx !== -1) mockDb.attendance.splice(idx, 1);
+        return;
+      }
       if (idx !== -1) {
         mockDb.attendance[idx].status = rec.status;
         mockDb.attendance[idx].markedBy = markedBy || mockDb.attendance[idx].markedBy || null;
@@ -422,6 +429,10 @@ export const saveAttendance = async (date, records, markedBy) => {
     const existing = await db.select().from(schema.attendance).where(
       and(eq(schema.attendance.date, date), eq(schema.attendance.studentId, rec.studentId))
     );
+    if (!rec.status) {
+      if (existing.length > 0) await db.delete(schema.attendance).where(eq(schema.attendance.id, existing[0].id));
+      continue;
+    }
     if (existing.length > 0) {
       await db.update(schema.attendance).set({ status: rec.status }).where(eq(schema.attendance.id, existing[0].id));
     } else {
@@ -453,10 +464,17 @@ export const getAllTestNames = async () => {
   return result.map(r => r.testName);
 };
 
+// A null/missing `marksObtained` means the entry was cleared back to blank —
+// delete the record instead of upserting, otherwise a cleared mark silently
+// keeps its old value on the next load/refresh.
 export const saveMarks = async (testName, subject, records) => {
   if (isMock) {
     records.forEach(rec => {
       const idx = mockDb.marks.findIndex(m => m.testName === testName && m.studentId === rec.studentId);
+      if (rec.marksObtained === null || rec.marksObtained === undefined) {
+        if (idx !== -1) mockDb.marks.splice(idx, 1);
+        return;
+      }
       if (idx !== -1) {
         mockDb.marks[idx].marksObtained = parseInt(rec.marksObtained);
         mockDb.marks[idx].maxMarks = parseInt(rec.maxMarks);
@@ -480,6 +498,10 @@ export const saveMarks = async (testName, subject, records) => {
     const existing = await db.select().from(schema.marks).where(
       and(eq(schema.marks.testName, testName), eq(schema.marks.studentId, rec.studentId))
     );
+    if (rec.marksObtained === null || rec.marksObtained === undefined) {
+      if (existing.length > 0) await db.delete(schema.marks).where(eq(schema.marks.id, existing[0].id));
+      continue;
+    }
     if (existing.length > 0) {
       await db.update(schema.marks)
         .set({ marksObtained: parseInt(rec.marksObtained), maxMarks: parseInt(rec.maxMarks), remarks: rec.remarks })

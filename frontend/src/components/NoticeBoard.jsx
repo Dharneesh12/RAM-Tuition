@@ -28,7 +28,7 @@ function NoticeModal({ notice, onSave, onClose }) {
   const [form, setForm] = useState({
     title: notice.title || '',
     message: notice.message || '',
-    publishDate: notice.publishDate || '2026-07-08',
+    publishDate: notice.publishDate || new Date().toISOString().slice(0, 10),
     expiryDate: notice.expiryDate || '',
     audience: notice.audience || 'All',
   });
@@ -98,7 +98,7 @@ export default function NoticeBoard() {
   const [notices, setNotices] = useState([]);
   const [title, setTitle] = useState('');
   const [messageText, setMessageText] = useState('');
-  const [publishDate, setPublishDate] = useState('2026-07-08');
+  const [publishDate, setPublishDate] = useState(new Date().toISOString().slice(0, 10));
   const [expiryDate, setExpiryDate] = useState('');
   const [audience, setAudience] = useState('All');
   const [loading, setLoading] = useState(true);

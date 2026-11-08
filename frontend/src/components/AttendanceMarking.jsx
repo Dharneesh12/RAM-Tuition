@@ -126,9 +126,16 @@ export default function AttendanceMarking({ user }) {
   };
 
   const handleSave = async () => {
-    const recordsArray = Object.keys(attendanceRecords)
-      .filter((id) => attendanceRecords[id])
-      .map((id) => ({ studentId: parseInt(id, 10), status: attendanceRecords[id] }));
+    // Students that were marked and then cleared back to "no status" need an
+    // explicit null sent so the backend deletes the stale record — otherwise
+    // the old mark silently reappears on the next load/refresh.
+    const clearedIds = Object.keys(initialRecords).filter((id) => initialRecords[id] && !attendanceRecords[id]);
+    const recordsArray = [
+      ...Object.keys(attendanceRecords)
+        .filter((id) => attendanceRecords[id])
+        .map((id) => ({ studentId: parseInt(id, 10), status: attendanceRecords[id] })),
+      ...clearedIds.map((id) => ({ studentId: parseInt(id, 10), status: null })),
+    ];
 
     if (recordsArray.length === 0) {
       showMessage('Mark at least one student before saving.', 'error');
@@ -150,7 +157,11 @@ export default function AttendanceMarking({ user }) {
       setMonthRecords((prev) => {
         const touched = new Set(recordsArray.map((r) => r.studentId));
         const kept = prev.filter((r) => !(r.date === selectedDate && touched.has(r.studentId)));
-        const merged = recordsArray.map((r) => ({ id: `local-${r.studentId}-${selectedDate}`, studentId: r.studentId, date: selectedDate, status: r.status }));
+        // Only re-add entries that still have a status — cleared ones should
+        // stay removed from the cached month data too.
+        const merged = recordsArray
+          .filter((r) => r.status)
+          .map((r) => ({ id: `local-${r.studentId}-${selectedDate}`, studentId: r.studentId, date: selectedDate, status: r.status }));
         return [...kept, ...merged];
       });
       setLastSaved(new Date());

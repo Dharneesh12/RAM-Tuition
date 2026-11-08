@@ -526,7 +526,13 @@ app.get('/api/dashboard', async (req, res) => {
         pendingCount,
         totalExpectedAmount: collectedAmount + pendingAmount
       },
-      recentAdmissions: students.slice(-4).reverse(),
+      // Attach each student's real July fee status (was previously fabricated
+      // on the frontend from hardcoded roll numbers) so "Recent Admissions"
+      // shows actual payment state instead of made-up data.
+      recentAdmissions: students.slice(-4).reverse().map((s) => {
+        const feeRecord = fees.find((f) => f.studentId === s.id);
+        return { ...s, feeStatus: feeRecord ? feeRecord.status : null };
+      }),
       notices: notices.slice(0, 3),
       attendanceByClass
     });

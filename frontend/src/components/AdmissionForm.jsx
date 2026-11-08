@@ -4,19 +4,18 @@ import { useConfig } from '../useConfig.js';
 
 export default function AdmissionForm({ onAdmissionComplete }) {
   const { classes, subjects: allSubjects } = useConfig();
-  const [step, setStep] = useState(1);
-  const [name, setName] = useState('Meena Lakshmi');
+  const [name, setName] = useState('');
   const [grade, setGrade] = useState('Class 10');
   const [board, setBoard] = useState('State Board');
-  const [school, setSchool] = useState('Govt. Hr. Sec. School, Ganapathy');
-  const [email, setEmail] = useState('meena@gmail.com');
-  const [fatherName, setFatherName] = useState('Ramesh Kumar');
-  const [fatherWhatsapp, setFatherWhatsapp] = useState('+91 98765 43210');
-  const [motherName, setMotherName] = useState('Lakshmi Devi');
-  const [motherWhatsapp, setMotherWhatsapp] = useState('+91 98765 12345');
-  const [subjects, setSubjects] = useState(['Mathematics', 'Science']);
-  const [loginPassword, setLoginPassword] = useState('password');
-  const [annualFee, setAnnualFee] = useState(24000);
+  const [school, setSchool] = useState('');
+  const [email, setEmail] = useState('');
+  const [fatherName, setFatherName] = useState('');
+  const [fatherWhatsapp, setFatherWhatsapp] = useState('');
+  const [motherName, setMotherName] = useState('');
+  const [motherWhatsapp, setMotherWhatsapp] = useState('');
+  const [subjects, setSubjects] = useState([]);
+  const [loginPassword, setLoginPassword] = useState('');
+  const [annualFee, setAnnualFee] = useState('');
   const [photo, setPhoto] = useState(null);
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
@@ -83,9 +82,6 @@ export default function AdmissionForm({ onAdmissionComplete }) {
     <div className="panel" style={{ maxWidth: '920px', margin: '0 auto' }}>
       <div className="panel-h">
         <h4>Personal & Academic Details</h4>
-        <span style={{ fontFamily: 'var(--mono)', fontSize: '.8rem', color: 'var(--muted)' }}>
-          STEP {step} / 3
-        </span>
       </div>
 
       {message && (
@@ -103,8 +99,7 @@ export default function AdmissionForm({ onAdmissionComplete }) {
         </div>
       )}
 
-      {step === 1 && (
-        <div>
+      <div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 22px' }}>
             <div className="field">
               <label>
@@ -333,7 +328,6 @@ export default function AdmissionForm({ onAdmissionComplete }) {
             </button>
           </div>
         </div>
-      )}
     </div>
   );
 }

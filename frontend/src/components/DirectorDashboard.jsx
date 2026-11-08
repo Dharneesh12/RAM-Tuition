@@ -44,7 +44,6 @@ export default function DirectorDashboard({ setActiveTab, user }) {
       {/* KPI Cards Section — staff sees only Students + Low Scores (no staff count / no fees) */}
       <div className="kpis" style={isStaff ? { gridTemplateColumns: 'repeat(2,1fr)' } : {}}>
         <div className="kpi k1">
-          <span className="trend up">▲ 6%</span>
           <div className="kic">
             <svg className="ic">
               <use href="#i-users" />
@@ -179,8 +178,8 @@ export default function DirectorDashboard({ setActiveTab, user }) {
               const bgGradient = colors[student.id % colors.length];
               const initials = student.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
               
-              // Find fee status
-              const feeStatus = student.status === 'draft' ? 'draft' : student.rollNo === 'R-1043' || student.rollNo === 'R-1045' ? 'pending' : 'paid';
+              // Real fee status from the backend (null when no fee record exists yet, e.g. a draft)
+              const feeStatus = student.status === 'draft' ? 'draft' : (student.feeStatus || null);
 
               return (
                 <tr key={student.id}>
@@ -209,8 +208,10 @@ export default function DirectorDashboard({ setActiveTab, user }) {
                       <span className="pill" style={{ background: 'var(--line)', color: 'var(--muted)' }}>Draft</span>
                     ) : feeStatus === 'pending' ? (
                       <span className="pill p-pend">Pending</span>
-                    ) : (
+                    ) : feeStatus === 'paid' ? (
                       <span className="pill p-paid">Paid</span>
+                    ) : (
+                      <span className="pill" style={{ background: 'var(--line)', color: 'var(--muted)' }}>—</span>
                     )}
                   </td>
                 </tr>
